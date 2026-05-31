@@ -187,6 +187,16 @@ def draw_trophy_header(subtitle=""):
         lines.append(f"{BOLD}{CYAN}{' ' * padding}{subtitle}{RESET}\n")
     return "\n".join(lines)
 
+def draw_simple_header(subtitle=""):
+    if not subtitle:
+        return ""
+    width = 76
+    title_str = f" {BOLD}{CYAN}{subtitle.upper()}{RESET} "
+    raw_len = len(subtitle) + 2
+    pad_left = (width - raw_len) // 2
+    pad_right = width - raw_len - pad_left
+    return f"\n{GOLD}{'═' * pad_left}{RESET}{title_str}{GOLD}{'═' * pad_right}{RESET}\n"
+
 def draw_box(title, content_lines, width=76, color=BLUE):
     """Draws a rounded Unicode box around lines of text."""
     box_lines = []
@@ -581,7 +591,7 @@ def render_live_race(stA, stB, scenario_name, scenario_desc, round_num, array_si
 
 def draw_round_result(nameA, nameB, rr, winsA, winsB, ties, stage_title, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None):
     """Draws a beautiful block summarizing the match outcome, including group standings if available."""
-    header = draw_trophy_header("MATCH COMPLETED")
+    header = draw_simple_header("MATCH COMPLETED")
     
     winner_name = "TIE MATCH" if winsA == winsB else (nameA if winsA > winsB else nameB)
     status_color = AMBER if winsA == winsB else GREEN

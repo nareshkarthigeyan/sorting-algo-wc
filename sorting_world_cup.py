@@ -1244,7 +1244,7 @@ class Tournament:
         for idx in range(start_idx, len(self.fixtures)):
             f = self.fixtures[idx]
             terminal_ui.clear_screen()
-            print(terminal_ui.draw_trophy_header(f"MATCH DAY - MATCH {idx + 1} / {len(self.fixtures)}"))
+            print(terminal_ui.draw_simple_header(f"MATCH DAY - MATCH {idx + 1} / {len(self.fixtures)}"))
             
             box_lines = [
                 f" Group {chr(ord('A') + f['group'])} Showcase Duel:",
@@ -1411,7 +1411,7 @@ class Tournament:
                 b = entrants[i + 1]
                 
                 terminal_ui.clear_screen()
-                print(terminal_ui.draw_trophy_header(f"{stage} MATCH"))
+                print(terminal_ui.draw_simple_header(f"{stage} MATCH"))
                 
                 box_lines = [
                     f" Knockout Duel - Stage: {stage}",
