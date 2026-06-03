@@ -2,9 +2,11 @@ import time
 import math
 import random
 import threading
+import sys
 from types import SimpleNamespace
 from terminal_ui import RESET, BOLD, CYAN, FG_MUTED, VIOLET, GREEN, GOLD
 
+sys.setrecursionlimit(2000000)
 
 # Constants
 SAMPLE_COUNT = 32 # Sampled count for TUI graph
@@ -40,6 +42,9 @@ class SortContext:
 
     def check(self):
         self.counter += 1
+        if (self.counter & 1023) == 0:
+            if self.cancel_flag and self.cancel_flag.is_set():
+                raise CancelledException()
         if (self.counter & self.mask) == 0:
             self.force_check()
 
@@ -58,7 +63,7 @@ class SortContext:
             raise CancelledException()
 
 class VisualArray:
-    def __init__(self, arr, state, context, visual_delay=0.0, publish_mask=4095):
+    def __init__(self, arr, state, context, visual_delay=0.0, publish_mask=4095, scale_factor=1.0):
         self.arr = list(arr)
         self.st = state
         self.context = context
@@ -67,6 +72,7 @@ class VisualArray:
         self.reads = 0
         self.writes = 0
         self.publish_mask = publish_mask
+        self.scale_factor = scale_factor
         self.publish(-1, -1)
 
     def size(self):
@@ -103,9 +109,11 @@ class VisualArray:
         if self.visual_delay > 0:
             time.sleep(self.visual_delay)
 
-
     def data(self):
         self.context.force_check()
+        # Track that we read the whole array
+        self.reads += len(self.arr)
+        self.operations += len(self.arr)
         return list(self.arr)
 
     def snapshot(self):
@@ -141,13 +149,17 @@ class VisualArray:
         
         meter = 100.0 if len(sample) < 2 else (100.0 * ordered) / (len(sample) - 1)
         
+        scaled_ops = int(self.operations * self.scale_factor)
+        scaled_reads = int(self.reads * self.scale_factor)
+        scaled_writes = int(self.writes * self.scale_factor)
+        
         with self.st.lock:
             self.st.sample = sample
             self.st.hotA = i
             self.st.hotB = j
-            self.st.operations = self.operations
-            self.st.reads = self.reads
-            self.st.writes = self.writes
+            self.st.operations = scaled_ops
+            self.st.reads = scaled_reads
+            self.st.writes = scaled_writes
             self.st.order_meter = meter
 
 class VisualState:
@@ -174,6 +186,8 @@ class RaceResult:
         self.tie = False
         self.nsA = 0
         self.nsB = 0
+        self.opsA = 0
+        self.opsB = 0
         self.sortedA = False
         self.sortedB = False
         self.cancelledA = False
@@ -192,17 +206,149 @@ class MatchResult:
 
 # --- Sorter Implementations ---
 
-def std_intro_sort(v):
-    a = v.data()
-    a.sort()
-    for i in range(len(a)):
-        v.set(i, a[i])
+def intro_sort(v):
+    n = v.size()
+    max_depth = 2 * math.floor(math.log2(n)) if n > 0 else 0
+    intro_sort_helper(v, 0, n - 1, max_depth)
 
-def std_stable_sort(v):
-    a = v.data()
-    a.sort()  # Python sort is stable (Timsort)
-    for i in range(len(a)):
-        v.set(i, a[i])
+def intro_sort_helper(v, lo, hi, depth_limit):
+    v.check()
+    if hi - lo <= 16:
+        # Insertion sort for small ranges
+        for i in range(lo + 1, hi + 1):
+            key = v.get(i)
+            j = i - 1
+            while j >= lo and v.get(j) > key:
+                v.set(j + 1, v.get(j))
+                j -= 1
+            v.set(j + 1, key)
+        return
+    if depth_limit == 0:
+        # Fall back to heapsort
+        intro_heapsort(v, lo, hi)
+        return
+    
+    # Partition (using median-of-three pivot)
+    mid = lo + (hi - lo) // 2
+    if v.get(mid) < v.get(lo): v.swapAt(mid, lo)
+    if v.get(hi) < v.get(lo): v.swapAt(hi, lo)
+    if v.get(hi) < v.get(mid): v.swapAt(hi, mid)
+    pivot = v.get(mid)
+    
+    i = lo
+    j = hi
+    while True:
+        while v.get(i) < pivot:
+            i += 1
+        while v.get(j) > pivot:
+            j -= 1
+        if i >= j:
+            p = j
+            break
+        v.swapAt(i, j)
+        i += 1
+        j -= 1
+        
+    intro_sort_helper(v, lo, p, depth_limit - 1)
+    intro_sort_helper(v, p + 1, hi, depth_limit - 1)
+
+def intro_heapsort(v, lo, hi):
+    n = hi - lo + 1
+    for i in range(n // 2 - 1, -1, -1):
+        intro_heapify(v, n, i, lo)
+    for i in range(n - 1, 0, -1):
+        v.swapAt(lo, lo + i)
+        intro_heapify(v, i, 0, lo)
+
+def intro_heapify(v, n, i, lo):
+    v.check()
+    largest = i
+    l = 2 * i + 1
+    r = 2 * i + 2
+    if l < n and v.get(lo + l) > v.get(lo + largest):
+        largest = l
+    if r < n and v.get(lo + r) > v.get(lo + largest):
+        largest = r
+    if largest != i:
+        v.swapAt(lo + i, lo + largest)
+        intro_heapify(v, n, largest, lo)
+
+def get_minrun(n):
+    r = 0
+    while n >= 64:
+        r |= (n & 1)
+        n >>= 1
+    return n + r
+
+def tim_sort(v):
+    n = v.size()
+    if n < 2:
+        return
+    minrun = get_minrun(n)
+    runs = []
+    
+    i = 0
+    while i < n:
+        v.check()
+        start = i
+        if i == n - 1:
+            runs.append((start, 1))
+            break
+            
+        i += 1
+        if v.get(i) < v.get(i - 1): # Descending
+            while i < n and v.get(i) < v.get(i - 1):
+                i += 1
+            # Reverse descending run
+            l = start
+            r = i - 1
+            while l < r:
+                v.swapAt(l, r)
+                l += 1
+                r -= 1
+        else: # Ascending
+            while i < n and v.get(i) >= v.get(i - 1):
+                i += 1
+                
+        run_len = i - start
+        if run_len < minrun and i < n:
+            force_len = min(n - start, minrun)
+            # Insertion sort
+            for j in range(start + run_len, start + force_len):
+                key = v.get(j)
+                k = j - 1
+                while k >= start and v.get(k) > key:
+                    v.set(k + 1, v.get(k))
+                    k -= 1
+                v.set(k + 1, key)
+            run_len = force_len
+            i = start + force_len
+            
+        runs.append((start, run_len))
+        
+        while len(runs) >= 2:
+            if len(runs) >= 3 and runs[-3][1] <= runs[-2][1] + runs[-1][1]:
+                if runs[-3][1] < runs[-1][1]:
+                    runs[-3] = merge_timsort_runs(v, runs[-3], runs[-2])
+                    runs.pop(-2)
+                else:
+                    runs[-2] = merge_timsort_runs(v, runs[-2], runs[-1])
+                    runs.pop(-1)
+            elif runs[-2][1] <= runs[-1][1]:
+                runs[-2] = merge_timsort_runs(v, runs[-2], runs[-1])
+                runs.pop(-1)
+            else:
+                break
+                
+    while len(runs) >= 2:
+        runs[-2] = merge_timsort_runs(v, runs[-2], runs[-1])
+        runs.pop(-1)
+
+def merge_timsort_runs(v, run1, run2):
+    start1, len1 = run1
+    start2, len2 = run2
+    merge_range(v, start1, start1 + len1 - 1, start2 + len2 - 1)
+    return (start1, len1 + len2)
 
 def merge_range(v, l, m, r):
     left = [v.get(i) for i in range(l, m + 1)]
@@ -226,17 +372,17 @@ def merge_range(v, l, m, r):
         j += 1
         k += 1
 
-def merge_sort_rec(v, l, r):
-    v.check()
-    if l >= r:
-        return
-    m = l + (r - l) // 2
-    merge_sort_rec(v, l, m)
-    merge_sort_rec(v, m + 1, r)
-    merge_range(v, l, m, r)
-
 def merge_sort(v):
-    merge_sort_rec(v, 0, v.size() - 1)
+    n = v.size()
+    curr_size = 1
+    while curr_size < n:
+        left = 0
+        while left < n - 1:
+            mid = min(left + curr_size - 1, n - 1)
+            right = min(left + 2 * curr_size - 1, n - 1)
+            merge_range(v, left, mid, right)
+            left += 2 * curr_size
+        curr_size *= 2
 
 def quick_sort(v):
     stack = [(0, v.size() - 1)]
@@ -296,9 +442,14 @@ def quick3_sort(v):
         gt = hi
         while i <= gt:
             v.check()
+            while i <= gt and v.get(gt) > pivot:
+                gt -= 1
+            if i > gt:
+                break
             x = v.get(i)
             if x < pivot:
-                v.swapAt(lt, i)
+                if lt != i:
+                    v.swapAt(lt, i)
                 lt += 1
                 i += 1
             elif x > pivot:
@@ -312,6 +463,7 @@ def quick3_sort(v):
         else:
             if gt + 1 < hi: stack.append((gt + 1, hi))
             if lo < lt - 1: stack.append((lo, lt - 1))
+
 
 def heapify(v, n, i):
     v.check()
@@ -412,6 +564,52 @@ def radix_sort(v):
             v.set(i, output[i])
         exp *= 10
 
+def msd_radix_sort(v):
+    n = v.size()
+    if n < 2:
+        return
+    mx = v.get(0)
+    for i in range(1, n):
+        val = v.get(i)
+        if val > mx:
+            mx = val
+    exp = 1
+    while mx // (exp * 10) > 0:
+        exp *= 10
+    msd_radix_helper(v, 0, n - 1, exp)
+
+def msd_radix_helper(v, lo, hi, exp):
+    if lo >= hi or exp <= 0:
+        return
+    v.check()
+    
+    n = hi - lo + 1
+    count = [0] * 11
+    for i in range(lo, hi + 1):
+        digit = (v.get(i) // exp) % 10
+        count[digit + 1] += 1
+        
+    for i in range(1, 10):
+        count[i] += count[i - 1]
+        
+    offsets = list(count)
+    temp = [0] * n
+    
+    for i in range(lo, hi + 1):
+        val = v.get(i)
+        digit = (val // exp) % 10
+        temp[offsets[digit]] = val
+        offsets[digit] += 1
+        
+    for i in range(n):
+        v.set(lo + i, temp[i])
+        
+    for i in range(10):
+        start = lo + count[i]
+        end = lo + count[i + 1] - 1
+        if start < end:
+            msd_radix_helper(v, start, end, exp // 10)
+
 def bucket_sort(v):
     n = v.size()
     if n == 0:
@@ -430,9 +628,39 @@ def bucket_sort(v):
         buckets[idx].append(val)
     k = 0
     for b in buckets:
-        b.sort()
+        # Custom insertion sort for the bucket
+        for i in range(1, len(b)):
+            key = b[i]
+            j = i - 1
+            while j >= 0 and b[j] > key:
+                b[j + 1] = b[j]
+                j -= 1
+            b[j + 1] = key
         for x in b:
             v.set(k, x)
+            k += 1
+
+def pigeonhole_sort(v):
+    n = v.size()
+    if n < 2:
+        return
+    mn = mx = v.get(0)
+    for i in range(1, n):
+        val = v.get(i)
+        mn = min(mn, val)
+        mx = max(mx, val)
+        
+    size = mx - mn + 1
+    holes = [[] for _ in range(size)]
+    for i in range(n):
+        val = v.get(i)
+        holes[val - mn].append(val)
+        
+    k = 0
+    for hole in holes:
+        v.check()
+        for val in hole:
+            v.set(k, val)
             k += 1
 
 class BSTNode:
@@ -523,6 +751,7 @@ def strand_sort(v):
         for idx in range(len(output)):
             v.set(idx, output[idx])
 
+
 def bitonic_merge(v, low, count, up):
     v.check()
     if count <= 1:
@@ -557,8 +786,7 @@ def bitonic_sort(v):
         lock=threading.Lock(),
         sample=[], hotA=-1, hotB=-1, operations=0, reads=0, writes=0, order_meter=0
     )
-    dummy_context = SortContext(None, None, None)
-    tmp = VisualArray(a, dummy_state, dummy_context)
+    tmp = VisualArray(a, dummy_state, v.context, scale_factor=v.scale_factor)
     bitonic_sort_rec(tmp, 0, power, True)
     out = tmp.snapshot()
     for i in range(n):
@@ -598,13 +826,6 @@ def selection_sort(v):
             if v.get(j) < v.get(min_i):
                 min_i = j
         v.swapAt(i, min_i)
-
-def exchange_sort(v):
-    n = v.size()
-    for i in range(n):
-        for j in range(i + 1, n):
-            if v.get(i) > v.get(j):
-                v.swapAt(i, j)
 
 def cycle_sort(v):
     n = v.size()
@@ -720,27 +941,168 @@ def odd_even_sort(v):
                 v.swapAt(i, i + 1)
                 sorted_flag = False
 
-def bead_sort(v):
+def smooth_sort(v):
     n = v.size()
-    if n == 0:
+    if n < 2:
         return
-    mx = 0
+    lp = [1, 1, 3, 5, 9, 15, 25, 41, 67, 109, 177, 287, 465, 753, 1221, 1977, 3199, 5177, 8377, 13555, 21933, 35489, 57423, 92913, 150337, 243251, 393589, 636841, 1030431, 1667273, 2697705, 4364979]
+    heap_sizes = []
+    
     for i in range(n):
-        mx = max(mx, v.get(i))
-    beads = [0] * mx
-    for i in range(n):
-        x = v.get(i)
-        for j in range(x):
-            v.check()
-            beads[j] += 1
-    out = [0] * n
-    for j in range(mx):
-        for i in range(n - beads[j], n):
-            out[i] += 1
-    for i in range(n):
-        v.set(i, out[i])
+        v.check()
+        if len(heap_sizes) >= 2 and heap_sizes[-2] == heap_sizes[-1] + 1:
+            heap_sizes.pop()
+            heap_sizes[-1] += 1
+        else:
+            if len(heap_sizes) >= 1 and heap_sizes[-1] == 1:
+                heap_sizes.append(0)
+            else:
+                heap_sizes.append(1)
+        smooth_sift_up(v, i, heap_sizes, lp)
+        
+    for i in range(n - 1, 0, -1):
+        v.check()
+        size = heap_sizes.pop()
+        if size > 1:
+            heap_sizes.append(size - 1)
+            heap_sizes.append(size - 2)
+            left_root = i - lp[size - 2] - 1
+            right_root = i - 1
+            smooth_sift_up(v, left_root, heap_sizes[:-1], lp)
+            smooth_sift_up(v, right_root, heap_sizes, lp)
 
-def stooge_small_rec(v, l, h):
+def smooth_sift_up(v, r, heap_sizes, lp):
+    i = len(heap_sizes) - 1
+    while i > 0:
+        v.check()
+        prev_r = r - lp[heap_sizes[i]]
+        val_r = v.get(r)
+        val_prev = v.get(prev_r)
+        if val_prev <= val_r:
+            break
+        size = heap_sizes[i]
+        if size >= 2:
+            child1 = r - 1
+            child2 = r - lp[size - 2] - 1
+            if v.get(child1) >= val_prev or v.get(child2) >= val_prev:
+                break
+        v.swapAt(r, prev_r)
+        r = prev_r
+        i -= 1
+    smooth_sift_down(v, r, heap_sizes[i], lp)
+
+def smooth_sift_down(v, r, size, lp):
+    while size >= 2:
+        v.check()
+        child1 = r - 1
+        child2 = r - lp[size - 2] - 1
+        val1 = v.get(child1)
+        val2 = v.get(child2)
+        val_r = v.get(r)
+        if val_r >= val1 and val_r >= val2:
+            break
+        if val1 >= val2:
+            v.swapAt(r, child1)
+            r = child1
+            size -= 1
+        else:
+            v.swapAt(r, child2)
+            r = child2
+            size -= 2
+
+def patience_sort(v):
+    n = v.size()
+    if n < 2:
+        return
+    piles = []
+    for i in range(n):
+        val = v.get(i)
+        lo = 0
+        hi = len(piles)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if piles[mid][-1] >= val:
+                hi = mid
+            else:
+                lo = mid + 1
+        if lo == len(piles):
+            piles.append([val])
+        else:
+            piles[lo].append(val)
+            
+    for i in range(n):
+        v.check()
+        min_val = None
+        min_p = -1
+        for p in range(len(piles)):
+            if piles[p]:
+                top = piles[p][-1]
+                if min_val is None or top < min_val:
+                    min_val = top
+                    min_p = p
+        piles[min_p].pop()
+        v.set(i, min_val)
+
+def library_sort(v):
+    n = v.size()
+    if n < 2:
+        return
+    gapped_size = 2 * n
+    gapped = [None] * gapped_size
+    gapped[0] = v.get(0)
+    inserted = 1
+    target = 1
+    
+    for i in range(1, n):
+        v.check()
+        val = v.get(i)
+        active_indices = [idx for idx in range(gapped_size) if gapped[idx] is not None]
+        lo = 0
+        hi = len(active_indices)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if gapped[active_indices[mid]] > val:
+                hi = mid
+            else:
+                lo = mid + 1
+        if lo == len(active_indices):
+            insert_idx = active_indices[-1] + 1 if active_indices else 0
+        else:
+            insert_idx = active_indices[lo]
+            
+        if insert_idx < gapped_size and gapped[insert_idx] is None:
+            gapped[insert_idx] = val
+        else:
+            empty_idx = insert_idx
+            while empty_idx < gapped_size and gapped[empty_idx] is not None:
+                empty_idx += 1
+            if empty_idx < gapped_size:
+                for shift in range(empty_idx, insert_idx, -1):
+                    gapped[shift] = gapped[shift - 1]
+                gapped[insert_idx] = val
+            else:
+                empty_idx = insert_idx
+                while empty_idx >= 0 and gapped[empty_idx] is not None:
+                    empty_idx -= 1
+                if empty_idx >= 0:
+                    for shift in range(empty_idx, insert_idx - 1):
+                        gapped[shift] = gapped[shift + 1]
+                    gapped[insert_idx - 1] = val
+                    
+        inserted += 1
+        if inserted == target or i == n - 1:
+            active_vals = [x for x in gapped if x is not None]
+            gapped = [None] * gapped_size
+            step = max(1, gapped_size // (2 * len(active_vals)))
+            for idx, val_act in enumerate(active_vals):
+                gapped[idx * step] = val_act
+            target *= 2
+            
+    sorted_vals = [x for x in gapped if x is not None]
+    for idx in range(min(n, len(sorted_vals))):
+        v.set(idx, sorted_vals[idx])
+
+def stooge_sort_rec(v, l, h):
     v.check()
     if l >= h:
         return
@@ -748,57 +1110,12 @@ def stooge_small_rec(v, l, h):
         v.swapAt(l, h)
     if h - l + 1 > 2:
         t = (h - l + 1) // 3
-        stooge_small_rec(v, l, h - t)
-        stooge_small_rec(v, l + t, h)
-        stooge_small_rec(v, l, h - t)
+        stooge_sort_rec(v, l, h - t)
+        stooge_sort_rec(v, l + t, h)
+        stooge_sort_rec(v, l, h - t)
 
 def stooge_sort(v):
-    n = v.size()
-    if n <= 64:
-        stooge_small_rec(v, 0, n - 1)
-        return
-    for p in range(n):
-        v.check()
-        step = max(1, n // 3)
-        changed = False
-        for i in range(p % step, n - step, step):
-            if v.get(i) > v.get(i + step):
-                v.swapAt(i, i + step)
-                changed = True
-        if not changed and p > step:
-            return
-
-def slow_small_rec(v, i, j):
-    v.check()
-    if i >= j:
-        return
-    m = (i + j) // 2
-    slow_small_rec(v, i, m)
-    slow_small_rec(v, m + 1, j)
-    if v.get(j) < v.get(m):
-        v.swapAt(j, m)
-    slow_small_rec(v, i, j - 1)
-
-def slow_sort(v):
-    n = v.size()
-    if n <= 32:
-        slow_small_rec(v, 0, n - 1)
-        return
-    window = 2
-    while window <= n:
-        v.check()
-        for i in range(0, n - window + 1, max(1, window // 2)):
-            m = i + window // 2
-            r = i + window - 1
-            if v.get(m) > v.get(r):
-                v.swapAt(m, r)
-        if window == n:
-            break
-        window = min(n, window + max(1, window // 8))
-    for i in range(1, n):
-        v.check()
-        if v.get(i - 1) > v.get(i):
-            v.swapAt(i - 1, i)
+    stooge_sort_rec(v, 0, v.size() - 1)
 
 def visual_is_sorted(v):
     for i in range(1, v.size()):
@@ -814,48 +1131,241 @@ def bogo_sort(v):
             idx = rng.randint(0, i)
             v.swapAt(i, idx)
 
-def bozo_sort(v):
-    rng = random.Random(7654321)
-    n = v.size()
-    while not visual_is_sorted(v):
-        i = rng.randint(0, max(0, n - 1))
-        j = rng.randint(0, max(0, n - 1))
-        v.swapAt(i, j)
+# --- Algorithms Roster and Metadata ---
 
 def get_algorithms():
     return [
-        {"name": "IntroSort", "sort": std_intro_sort},
-        {"name": "Stable Sort", "sort": std_stable_sort},
-        {"name": "Merge Sort", "sort": merge_sort},
-        {"name": "Quick Sort", "sort": quick_sort},
-        {"name": "3-Way Quick Sort", "sort": quick3_sort},
-        {"name": "Heap Sort", "sort": heap_sort},
-        {"name": "Shell Sort", "sort": shell_sort},
-        {"name": "Tim/Natural Merge", "sort": natural_merge_sort},
-        {"name": "Counting Sort", "sort": counting_sort},
-        {"name": "Radix Sort", "sort": radix_sort},
-        {"name": "Bucket Sort", "sort": bucket_sort},
-        {"name": "Pigeonhole Sort", "sort": counting_sort}, # same as counting
-        {"name": "Tree Sort", "sort": tree_sort},
-        {"name": "Tournament Sort", "sort": tournament_sort},
-        {"name": "Strand Sort", "sort": strand_sort},
-        {"name": "Bitonic Sort", "sort": bitonic_sort},
-        {"name": "Insertion Sort", "sort": insertion_sort},
-        {"name": "Binary Insertion", "sort": binary_insertion_sort},
-        {"name": "Selection Sort", "sort": selection_sort},
-        {"name": "Exchange Sort", "sort": exchange_sort},
-        {"name": "Cycle Sort", "sort": cycle_sort},
-        {"name": "Pancake Sort", "sort": pancake_sort},
-        {"name": "Comb Sort", "sort": comb_sort},
-        {"name": "Gnome Sort", "sort": gnome_sort},
-        {"name": "Bubble Sort", "sort": bubble_sort},
-        {"name": "Cocktail Shaker", "sort": cocktail_sort},
-        {"name": "Odd-Even Sort", "sort": odd_even_sort},
-        {"name": "Bead Sort", "sort": bead_sort},
-        {"name": "Stooge Sort", "sort": stooge_sort},
-        {"name": "Slow Sort", "sort": slow_sort},
-        {"name": "Bogo Sort", "sort": bogo_sort},
-        {"name": "Bozo Sort", "sort": bozo_sort},
+        # POOL 1 — ELITE CONTENDERS
+        {
+            "name": "IntroSort", "sort": intro_sort, "category": "Elite Contenders",
+            "year": 1997, "inventor": "David Musser", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(log N)",
+            "description": "Dynamic hybrid: Quick Sort falling back to Heap Sort and Insertion Sort.",
+            "personality": "Calculated and adaptive. Ready to swap strategies to prevent worst cases."
+        },
+        {
+            "name": "Timsort", "sort": tim_sort, "category": "Elite Contenders",
+            "year": 2002, "inventor": "Tim Peters", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(N)",
+            "description": "Real-world optimizer that identifies runs and merges them.",
+            "personality": "Sleek and adaptive. Loves real-world patterns."
+        },
+        {
+            "name": "Merge Sort", "sort": merge_sort, "category": "Elite Contenders",
+            "year": 1945, "inventor": "John von Neumann", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(N)",
+            "description": "Classic divide-and-conquer algorithm using run merges.",
+            "personality": "Predictable, steady, and memory-hungry."
+        },
+        {
+            "name": "Quick Sort", "sort": quick_sort, "category": "Elite Contenders",
+            "year": 1959, "inventor": "Tony Hoare", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(log N)",
+            "description": "Pivot-based partitioner. Standard in performance benchmarks.",
+            "personality": "Live fast, die by bad pivots."
+        },
+        {
+            "name": "3-Way Quick Sort", "sort": quick3_sort, "category": "Elite Contenders",
+            "year": 1960, "inventor": "Tony Hoare / Sedgewick", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(log N)",
+            "description": "Quicksort with three partitions. Optimal for duplicated keys.",
+            "personality": "Duplicates make me faster!"
+        },
+        {
+            "name": "Heap Sort", "sort": heap_sort, "category": "Elite Contenders",
+            "year": 1964, "inventor": "J. W. J. Williams", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(1)",
+            "description": "Selection-based sort that builds a binary heap.",
+            "personality": "Reliable. Boring. Effective."
+        },
+        {
+            "name": "Shell Sort", "sort": shell_sort, "category": "Elite Contenders",
+            "year": 1959, "inventor": "Donald Shell", "complexity": "O(N (log N)^2)",
+            "stable": False, "memory": "O(1)",
+            "description": "Insertion sort generalization using shrinking gaps.",
+            "personality": "Mind the gap. I jump far."
+        },
+        {
+            "name": "Natural Merge Sort", "sort": natural_merge_sort, "category": "Elite Contenders",
+            "year": 1945, "inventor": "John von Neumann", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(N)",
+            "description": "Merge sort that scans for natural sorted subsegments.",
+            "personality": "A path-finder that merges pre-sorted runs."
+        },
+        
+        # POOL 2 — LINEAR-TIME SPECIALISTS
+        {
+            "name": "Counting Sort", "sort": counting_sort, "category": "Linear-Time Specialists",
+            "year": 1954, "inventor": "Harold H. Seward", "complexity": "O(N + K)",
+            "stable": True, "memory": "O(N + K)",
+            "description": "Sorts by building a count dictionary directly.",
+            "personality": "I don't compare; I count."
+        },
+        {
+            "name": "Radix Sort (LSD)", "sort": radix_sort, "category": "Linear-Time Specialists",
+            "year": 1929, "inventor": "Herman Hollerith", "complexity": "O(N * W)",
+            "stable": True, "memory": "O(N + K)",
+            "description": "LSD radix sorting values digit by digit.",
+            "personality": "Loves integers. Builds order digit by digit."
+        },
+        {
+            "name": "MSD Radix Sort", "sort": msd_radix_sort, "category": "Linear-Time Specialists",
+            "year": 1954, "inventor": "Harold H. Seward", "complexity": "O(N * W)",
+            "stable": True, "memory": "O(N + K)",
+            "description": "Recursive digit sorter from most significant down.",
+            "personality": "Top-down precision. Divides by powerful digits."
+        },
+        {
+            "name": "Bucket Sort", "sort": bucket_sort, "category": "Linear-Time Specialists",
+            "year": 1956, "inventor": "E. J. Isaac", "complexity": "O(N + K)",
+            "stable": True, "memory": "O(N + K)",
+            "description": "Distributes values into buckets, then sorts them individually.",
+            "personality": "Organized compartmentalizer. Let's bucket it."
+        },
+        {
+            "name": "Pigeonhole Sort", "sort": pigeonhole_sort, "category": "Linear-Time Specialists",
+            "year": 1842, "inventor": "Peter Gustav Dirichlet", "complexity": "O(N + Range)",
+            "stable": True, "memory": "O(N + Range)",
+            "description": "Places items in value holes and aggregates them.",
+            "personality": "Dirichlet's pride. One pigeon per hole."
+        },
+        {
+            "name": "Tree Sort", "sort": tree_sort, "category": "Linear-Time Specialists",
+            "year": 1962, "inventor": "Robert W. Floyd", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(N)",
+            "description": "Builds a Binary Search Tree and performs in-order traversal.",
+            "personality": "Branching out. I grow trees to find order."
+        },
+        {
+            "name": "Tournament Sort", "sort": tournament_sort, "category": "Linear-Time Specialists",
+            "year": 1957, "inventor": "H. H. Seward", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(N)",
+            "description": "Selects minimums using a knockout tree structure.",
+            "personality": "Bracket builder. The winner goes to the top."
+        },
+        {
+            "name": "Strand Sort", "sort": strand_sort, "category": "Linear-Time Specialists",
+            "year": 1970, "inventor": "Unknown", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(N)",
+            "description": "Extracts ascending strands and merges them recursively.",
+            "personality": "Extracting threads of order from confusion."
+        },
+        
+        # POOL 3 — MID-TIER CHALLENGERS
+        {
+            "name": "Bitonic Sort", "sort": bitonic_sort, "category": "Mid-Tier Challengers",
+            "year": 1968, "inventor": "Ken Batcher", "complexity": "O(N (log N)^2)",
+            "stable": False, "memory": "O(N log N)",
+            "description": "Parallel sorting network using bitonic sequence merges.",
+            "personality": "Symmetry in motion. Up and down merge networks."
+        },
+        {
+            "name": "Comb Sort", "sort": comb_sort, "category": "Mid-Tier Challengers",
+            "year": 1980, "inventor": "Wlodzimierz Dobosiewicz", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(1)",
+            "description": "Combats Bubble Sort turtles using gap sizes.",
+            "personality": "A Bubble sort with a comb to smooth the kinks."
+        },
+        {
+            "name": "Binary Insertion Sort", "sort": binary_insertion_sort, "category": "Mid-Tier Challengers",
+            "year": 1946, "inventor": "John Mauchly", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Insertion sort with binary search for faster insertion indexes.",
+            "personality": "Searches fast, shifts slow."
+        },
+        {
+            "name": "Cycle Sort", "sort": cycle_sort, "category": "Mid-Tier Challengers",
+            "year": 2013, "inventor": "W. P. Barlow", "complexity": "O(N^2)",
+            "stable": False, "memory": "O(1)",
+            "description": "In-place write miser. Minimizes array writes.",
+            "personality": "I hate writing. I only swap if forced."
+        },
+        {
+            "name": "Pancake Sort", "sort": pancake_sort, "category": "Mid-Tier Challengers",
+            "year": 1979, "inventor": "Harry Dweighter", "complexity": "O(N^2)",
+            "stable": False, "memory": "O(1)",
+            "description": "Flips prefixes of the array using a spatula.",
+            "personality": "Spatula flipper. Let's make breakfast."
+        },
+        {
+            "name": "Insertion Sort", "sort": insertion_sort, "category": "Mid-Tier Challengers",
+            "year": 1959, "inventor": "Unknown", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Slides cards into their proper position in the sorted hand.",
+            "personality": "Classic card-dealer style. Patiently inserting."
+        },
+        {
+            "name": "Selection Sort", "sort": selection_sort, "category": "Mid-Tier Challengers",
+            "year": 1956, "inventor": "Unknown", "complexity": "O(N^2)",
+            "stable": False, "memory": "O(1)",
+            "description": "Repeatedly finds minimum values and places them in order.",
+            "personality": "Slowly scans, picks the smallest, and repeats."
+        },
+        {
+            "name": "Bubble Sort", "sort": bubble_sort, "category": "Mid-Tier Challengers",
+            "year": 1956, "inventor": "Edward H. Friend", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Repeatedly floats adjacent large values to the top.",
+            "personality": "Float up like bubbles. Slow, heavy, classic."
+        },
+        
+        # POOL 4 — WEIRDOS AND MEMES
+        {
+            "name": "Cocktail Shaker Sort", "sort": cocktail_sort, "category": "Weirdos and Memes",
+            "year": 1980, "inventor": "Unknown", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Bi-directional bubble sort that clears turtles quickly.",
+            "personality": "Shakes back and forth. Double the bubbles."
+        },
+        {
+            "name": "Gnome Sort", "sort": gnome_sort, "category": "Weirdos and Memes",
+            "year": 2000, "inventor": "Hamid Sarbazi-Azad", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Garden gnome sorting method that steps back to fix errors.",
+            "personality": "A stubborn garden gnome shuffling flowerpots."
+        },
+        {
+            "name": "Odd-Even Sort", "sort": odd_even_sort, "category": "Weirdos and Memes",
+            "year": 1972, "inventor": "N. Habermann", "complexity": "O(N^2)",
+            "stable": True, "memory": "O(1)",
+            "description": "Bubble variant that checks odd pairs, then even pairs.",
+            "personality": "Strict alternation. Odd pairs, then even pairs."
+        },
+        {
+            "name": "Smoothsort", "sort": smooth_sort, "category": "Weirdos and Memes",
+            "year": 1981, "inventor": "Edsger Dijkstra", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(1)",
+            "description": "Adaptive heapsort using Leonardo numbers.",
+            "personality": "Dijkstra's pride. Over-engineered but O(N) on sorted inputs!"
+        },
+        {
+            "name": "Patience Sort", "sort": patience_sort, "category": "Weirdos and Memes",
+            "year": 2001, "inventor": "C. L. Mallows", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(N)",
+            "description": "Uses piles of descending elements like solitaire.",
+            "personality": "Solitaire master. Builds piles and merges them."
+        },
+        {
+            "name": "Library Sort", "sort": library_sort, "category": "Weirdos and Memes",
+            "year": 2004, "inventor": "Michael A. Bender", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(N)",
+            "description": "Gapped insertion sort. Speeds insertions by leaving spaces.",
+            "personality": "Leaving spaces on the bookshelves. Don't crowd me."
+        },
+        {
+            "name": "Stooge Sort", "sort": stooge_sort, "category": "Weirdos and Memes",
+            "year": 1984, "inventor": "Howard, Fine, et al.", "complexity": "O(N^2.7)",
+            "stable": False, "memory": "O(N)",
+            "description": "Recursively swaps end values and sorts 2/3rds in a slow loop.",
+            "personality": "Pure chaos. The three stooges slapping numbers."
+        },
+        {
+            "name": "Bogo Sort", "sort": bogo_sort, "category": "Weirdos and Memes",
+            "year": 1980, "inventor": "Unknown", "complexity": "O(N * N!)",
+            "stable": False, "memory": "O(1)",
+            "description": "Shuffles randomly until sorted. Highly inefficient.",
+            "personality": "Has absolutely no plan."
+        }
     ]
 
 # --- Sorter Runner ---
@@ -864,13 +1374,13 @@ class Accumulator:
     def __init__(self):
         self.value = 0
 
-def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_accum, visual_delay):
+def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_accum, visual_delay, scale_factor=1.0):
     if visual_delay > 0:
         target = max(1, int(0.033 / visual_delay))
         mask = 1
         while mask < target:
             mask = (mask << 1) | 1
-        mask = min(511, mask)  # cap at 511 when animating to ensure smooth updates
+        mask = min(511, mask)
     else:
         n = len(input_arr)
         target = max(16383, n // 8)
@@ -879,9 +1389,8 @@ def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_a
             mask = (mask << 1) | 1
         
     context = SortContext(cancel_event, pause_event, paused_ns_accum, mask)
-    array = VisualArray(input_arr, state, context, visual_delay, publish_mask=mask)
+    array = VisualArray(input_arr, state, context, visual_delay, publish_mask=mask, scale_factor=scale_factor)
 
-    
     start_time = time.perf_counter_ns()
     try:
         algo_fn(array)
@@ -892,6 +1401,7 @@ def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_a
         
         final_values = array.snapshot()
         is_srt = array.sorted()
+        array.publish(-1, -1)
         
         with state.lock:
             state.sorted = is_srt
@@ -907,6 +1417,7 @@ def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_a
         elapsed_ns = (end_time - start_time) - paused_ns_accum.value
         elapsed_ns = max(0, elapsed_ns)
         final_values = array.snapshot()
+        array.publish(-1, -1)
         
         with state.lock:
             state.sorted = False
@@ -917,16 +1428,21 @@ def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_a
             state.hotA = -1
             state.hotB = -1
             state.done = True
-    except Exception as e:
-        # Catch unexpected crashes inside sorting algorithms as failed
+    except Exception:
         end_time = time.perf_counter_ns()
         elapsed_ns = (end_time - start_time) - paused_ns_accum.value
         elapsed_ns = max(0, elapsed_ns)
+        final_values = array.snapshot()
+        array.publish(-1, -1)
+        
         with state.lock:
             state.sorted = False
             state.cancelled = False
             state.ns = elapsed_ns
             state.elapsed_ms = elapsed_ns // 1_000_000
+            state.final_values = final_values
+            state.hotA = -1
+            state.hotB = -1
             state.done = True
 
 def make_input(scenario_type, n, rng):
@@ -960,10 +1476,109 @@ def adjacent_disorder(a):
             bad += 1
     return bad
 
+# --- ELO and Win Probability Helper Functions ---
+
+def update_elo(algoA, algoB, result, K=32):
+    rA = algoA.get('elo', 1500.0)
+    rB = algoB.get('elo', 1500.0)
+    
+    eA = 1.0 / (1.0 + 10.0 ** ((rB - rA) / 400.0))
+    eB = 1.0 / (1.0 + 10.0 ** ((rA - rB) / 400.0))
+    
+    if result.tie:
+        sA = 0.5
+        sB = 0.5
+    elif result.winner == 0:
+        sA = 1.0
+        sB = 0.0
+    else:
+        sA = 0.0
+        sB = 1.0
+        
+    diffA = K * (sA - eA)
+    diffB = K * (sB - eB)
+    
+    algoA['elo'] = rA + diffA
+    algoB['elo'] = rB + diffB
+    
+    algoA['tournament_elo_diff'] = algoA.get('tournament_elo_diff', 0.0) + diffA
+    algoB['tournament_elo_diff'] = algoB.get('tournament_elo_diff', 0.0) + diffB
+    
+    import database
+    database.save_elo_ratings({
+        algoA['name']: algoA['elo'],
+        algoB['name']: algoB['elo']
+    })
+
+def estimate_win_probability(algoA, algoB):
+    rA = algoA.get('elo', 1500.0)
+    rB = algoB.get('elo', 1500.0)
+    
+    # Expected ELO probability
+    prob_elo = 1.0 / (1.0 + 10.0 ** ((rB - rA) / 400.0))
+    
+    # Historical win rate
+    import database
+    stats = database.get_historical_stats()
+    
+    wrA = 0.5
+    if algoA['name'] in stats:
+        sA = stats[algoA['name']]
+        if sA['played'] > 0:
+            wrA = sA['won'] / sA['played']
+            
+    wrB = 0.5
+    if algoB['name'] in stats:
+        sB = stats[algoB['name']]
+        if sB['played'] > 0:
+            wrB = sB['won'] / sB['played']
+            
+    prob_hist = 0.5
+    if wrA != 0.5 or wrB != 0.5:
+        prob_hist = wrA / (wrA + wrB) if (wrA + wrB) > 0 else 0.5
+        
+    # Scenario performance matching
+    scen_perf = database.get_scenario_performance()
+    scen_winsA = 0
+    scen_winsB = 0
+    
+    perfA = scen_perf.get(algoA['name'], {})
+    perfB = scen_perf.get(algoB['name'], {})
+    
+    for s_id in range(5):
+        pA = perfA.get(s_id)
+        pB = perfB.get(s_id)
+        if pA and pB:
+            if pA['avg_time_ns'] < pB['avg_time_ns']:
+                scen_winsA += 1
+            elif pA['avg_time_ns'] > pB['avg_time_ns']:
+                scen_winsB += 1
+                
+    prob_scen = 0.5
+    if (scen_winsA + scen_winsB) > 0:
+        prob_scen = scen_winsA / (scen_winsA + scen_winsB)
+        
+    # Weights: ELO (60%), History (20%), Scenario strengths (20%)
+    weight_elo = 0.6
+    weight_hist = 0.2 if (wrA != 0.5 or wrB != 0.5) else 0.0
+    weight_scen = 0.2 if (scen_winsA + scen_winsB) > 0 else 0.0
+    
+    total_w = weight_elo + weight_hist + weight_scen
+    final_prob = (prob_elo * weight_elo + prob_hist * weight_hist + prob_scen * weight_scen) / total_w
+    final_prob = max(0.01, min(0.99, final_prob))
+    
+    pctA = int(final_prob * 100)
+    pctB = 100 - pctA
+    return pctA, pctB
+
+def compute_rankings(algos):
+    sorted_algos = sorted(algos, key=lambda x: x.get('elo', 1500.0), reverse=True)
+    return {a['name']: idx + 1 for idx, a in enumerate(sorted_algos)}
+
 # --- Tournament Execution Engine ---
 
-def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, visual_delay, timeout, match_score=None, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None):
-    timeout = min(30.0, timeout)
+def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, visual_delay, timeout, match_score=None, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None):
+    timeout = min(240.0, timeout)
     stA = VisualState(algoA['name'])
     stB = VisualState(algoB['name'])
     
@@ -976,13 +1591,16 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
     paused_nsA = Accumulator()
     paused_nsB = Accumulator()
     
+    tui_size = display_size if display_size is not None else array_size
+    scale_factor = float(tui_size) / len(input_arr)
+    
     threadA = threading.Thread(
         target=run_sorter,
-        args=(algoA['sort'], input_arr, stA, cancelA, pauseA, paused_nsA, visual_delay)
+        args=(algoA['sort'], input_arr, stA, cancelA, pauseA, paused_nsA, visual_delay, scale_factor)
     )
     threadB = threading.Thread(
         target=run_sorter,
-        args=(algoB['sort'], input_arr, stB, cancelB, pauseB, paused_nsB, visual_delay)
+        args=(algoB['sort'], input_arr, stB, cancelB, pauseB, paused_nsB, visual_delay, scale_factor)
     )
     
     threadA.start()
@@ -1013,19 +1631,15 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
             if not stB.done:
                 stB.elapsed_ms = elapsed_ms
                 
-        # Handle timeouts/cancellation
         if mode == 'knockout':
-            # Instant elimination when opponent finishes sorted
             if doneA and sortedA and not doneB:
                 cancelB.set()
             if doneB and sortedB and not doneA:
                 cancelA.set()
-            # Timeout (forced termination)
             if elapsed > timeout:
                 if not doneA: cancelA.set()
                 if not doneB: cancelB.set()
         else:  # group mode
-            # 1-second grace period once one finishes sorted
             if doneA and sortedA and not doneB and grace_end is None:
                 grace_end = now + 1.0
             if doneB and sortedB and not doneA and grace_end is None:
@@ -1035,17 +1649,16 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
                 if not doneA: cancelA.set()
                 if not doneB: cancelB.set()
                 
-            # Timeout (draw)
             if not sortedA and not sortedB and elapsed > timeout:
                 forced_tie = True
                 cancelA.set()
                 cancelB.set()
                 
-        # Draw TUI updates at ~30 FPS
         terminal_ui.render_live_race(
-            stA, stB, SCENARIO_NAMES[scenario], SCENARIO_DESCRIPTIONS[scenario], round_num, array_size,
+            stA, stB, SCENARIO_NAMES[scenario], SCENARIO_DESCRIPTIONS[scenario], round_num, tui_size,
             match_score=match_score, group_id=group_id, standings=standings, algo_names=algo_names,
-            stage_title=title, bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners
+            stage_title=title, bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners,
+            stage_scores=stage_scores
         )
         
         if doneA and doneB:
@@ -1056,25 +1669,25 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
     threadA.join()
     threadB.join()
     
-    # Final draw state update
     terminal_ui.render_live_race(
-        stA, stB, SCENARIO_NAMES[scenario], SCENARIO_DESCRIPTIONS[scenario], round_num, array_size,
+        stA, stB, SCENARIO_NAMES[scenario], SCENARIO_DESCRIPTIONS[scenario], round_num, tui_size,
         match_score=match_score, group_id=group_id, standings=standings, algo_names=algo_names,
-        stage_title=title, bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners
+        stage_title=title, bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners,
+        stage_scores=stage_scores
     )
 
-    
-    # Analyze outcome
     rr = RaceResult()
     with stA.lock:
         rr.nsA = stA.ns
         rr.sortedA = stA.sorted
         rr.cancelledA = stA.cancelled
+        rr.opsA = stA.operations
         finalA = list(stA.final_values)
     with stB.lock:
         rr.nsB = stB.ns
         rr.sortedB = stB.sorted
         rr.cancelledB = stB.cancelled
+        rr.opsB = stB.operations
         finalB = list(stB.final_values)
         
     if forced_tie and mode == 'group':
@@ -1085,7 +1698,6 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
     elif rr.sortedA and rr.sortedB:
         rr.winner_slot = 0 if rr.nsA <= rr.nsB else 1
     else:
-        # Tie breaker: adjacent disorder count
         badA = adjacent_disorder(finalA)
         badB = adjacent_disorder(finalB)
         if badA != badB:
@@ -1095,7 +1707,7 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
             
     return rr
 
-def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, timeout, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None):
+def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, timeout, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None, algo_list=None, tournament=None):
     scenarios = [0, 1, 2, 3, 4]
     winsA = 0
     winsB = 0
@@ -1105,22 +1717,39 @@ def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, t
     
     import terminal_ui
     
+    # Pre-match Showdown Preview
+    if algo_list:
+        rankings = compute_rankings(algo_list)
+        rankA = rankings.get(algoA['name'], 32)
+        rankB = rankings.get(algoB['name'], 32)
+        probA, probB = estimate_win_probability(algoA, algoB)
+        terminal_ui.render_pre_match_intro(algoA, algoB, rankA, rankB, probA, probB, stage_title)
+        
+        # Flush key buffer to prevent skip
+        time.sleep(0.5)
+        if tournament and getattr(tournament, 'autoplay', False):
+            time.sleep(1.5)
+        else:
+            while terminal_ui.read_key(block=False) is not None:
+                pass
+            while True:
+                if terminal_ui.read_key(block=True) == 'enter':
+                    break
+                
     for round_num in range(1, 6):
         scenario = scenarios[round_num - 1]
-        
-        # Prepare inputs
         input_arr = make_input(scenario, array_size, rng)
         
-        # Race!
         rr = race(
             algoA, algoB, input_arr, stage_title, scenario, round_num, mode,
             array_size, visual_delay, timeout,
             match_score=(winsA, winsB, ties),
             group_id=group_id, standings=standings, algo_names=algo_names,
-            bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners
+            bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners,
+            display_size=display_size,
+            stage_scores=stage_scores
         )
 
-        
         match_nsA += rr.nsA
         match_nsB += rr.nsB
         
@@ -1131,26 +1760,59 @@ def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, t
         else:
             winsB += 1
             
+        # Update database scenario stats per round
+        import database
+        if rr.sortedA:
+            database.update_historical_stats(algoA['name'], round_time_ns=rr.nsA)
+            database.update_scenario_performance(algoA['name'], scenario, rr.nsA, rr.opsA)
+        if rr.sortedB:
+            database.update_historical_stats(algoB['name'], round_time_ns=rr.nsB)
+            database.update_scenario_performance(algoB['name'], scenario, rr.nsB, rr.opsB)
+            
+        # Update tournament-wide stats
+        if tournament:
+            if rr.sortedA:
+                tournament.total_sorted_rounds[algoA['name']] += 1
+                tournament.total_sorted_time_ns[algoA['name']] += rr.nsA
+                if rr.nsA < tournament.fastest_round_ns:
+                    tournament.fastest_round_ns = rr.nsA
+                    tournament.fastest_round_algo = algoA['name']
+                if rr.opsA < tournament.lowest_ops_round_val:
+                    tournament.lowest_ops_round_val = rr.opsA
+                    tournament.lowest_ops_round_algo = algoA['name']
+            if rr.sortedB:
+                tournament.total_sorted_rounds[algoB['name']] += 1
+                tournament.total_sorted_time_ns[algoB['name']] += rr.nsB
+                if rr.nsB < tournament.fastest_round_ns:
+                    tournament.fastest_round_ns = rr.nsB
+                    tournament.fastest_round_algo = algoB['name']
+                if rr.opsB < tournament.lowest_ops_round_val:
+                    tournament.lowest_ops_round_val = rr.opsB
+                    tournament.lowest_ops_round_algo = algoB['name']
+                    
         match_decided = winsA == 3 or winsB == 3 or (round_num == 5 and mode == 'group')
         
         if match_decided:
             terminal_ui.draw_round_result(
                 algoA['name'], algoB['name'], rr, winsA, winsB, ties, stage_title,
                 group_id=group_id, standings=standings, algo_names=algo_names,
-                bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners
+                bracket=bracket, current_match_idx=current_match_idx, stage_winners=stage_winners,
+                stage_scores=stage_scores
             )
             if mode == 'knockout':
-                print("\n  Press Enter to continue to the next knockout match...")
-                while True:
-                    if terminal_ui.read_key(block=True) == 'enter':
-                        break
+                if tournament and getattr(tournament, 'autoplay', False):
+                    time.sleep(1.5)
+                else:
+                    print("\n  Press Enter to continue to the next knockout match...")
+                    while True:
+                        if terminal_ui.read_key(block=True) == 'enter':
+                            break
             else:
                 time.sleep(2.0)
             break
         else:
             time.sleep(0.3)
 
-            
     result = MatchResult()
     result.winsA = winsA
     result.winsB = winsB
@@ -1166,57 +1828,157 @@ def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, t
         result.winner = 0 if winsA > winsB else 1
         result.loser = 1 if winsA > winsB else 0
         
+    # Update match stats in database
+    wonA = 1 if result.winner == 0 else 0
+    lostA = 1 if result.winner == 1 else 0
+    wonB = 1 if result.winner == 1 else 0
+    lostB = 1 if result.winner == 0 else 0
+    
+    ptsA = 3 if wonA else (1 if result.tie else 0)
+    ptsB = 3 if wonB else (1 if result.tie else 0)
+    draws_inc = 1 if result.tie else 0
+    
+    import database
+    database.update_historical_stats(
+        algoA['name'],
+        match_played=1,
+        match_won=wonA,
+        match_lost=lostA,
+        match_draws=draws_inc,
+        points_inc=ptsA,
+        round_wins=winsA,
+        round_losses=winsB
+    )
+    database.update_historical_stats(
+        algoB['name'],
+        match_played=1,
+        match_won=wonB,
+        match_lost=lostB,
+        match_draws=draws_inc,
+        points_inc=ptsB,
+        round_wins=winsB,
+        round_losses=winsA
+    )
+    
+    # Update ELO ratings
+    update_elo(algoA, algoB, result)
+    
+    # Update Giant Killer stat
+    if tournament and result.winner is not None and not result.tie:
+        winner = algoA if result.winner == 0 else algoB
+        loser = algoB if result.winner == 0 else algoA
+        if winner['elo'] < loser['elo']:
+            elo_diff = loser['elo'] - winner['elo']
+            tournament.giant_kills.append({
+                "winner": winner['name'],
+                "loser": loser['name'],
+                "elo_diff": elo_diff
+            })
+            
+    if stage_scores is not None:
+        stage_scores.append((winsA, winsB))
+        
     return result
 
 class Tournament:
-    def __init__(self, algos, array_size=100000, visual_delay=0.0, timeout=5):
+    def __init__(self, algos, array_size=100000, knockouts_size=1000000, final_size=10000000, visual_delay=0.0, group_timeout=30, ko_timeout=60, final_timeout=240, autoplay=False):
         self.algos = algos
         self.array_size = array_size
+        self.knockouts_size = knockouts_size
+        self.final_size = final_size
         self.visual_delay = visual_delay
-        self.timeout = timeout
+        self.group_timeout = group_timeout
+        self.ko_timeout = ko_timeout
+        self.final_timeout = final_timeout
+        self.autoplay = autoplay
         self.rng = random.Random()
         
         self.groups = [[] for _ in range(8)]
         self.fixtures = []
-        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0} for i in range(len(self.algos))]
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
         self.current_bracket = []
+        self.bracket_entrants = []
         self.current_stage = "Group Stage"
         self.next_fixture_idx = 0
+        self.year = 2026
         
-        # Initial draw
+        # Persistent metrics
+        self.paths = {a['name']: ["Group Stage"] for a in self.algos}
+        self.total_sorted_rounds = {a['name']: 0 for a in self.algos}
+        self.total_sorted_time_ns = {a['name']: 0 for a in self.algos}
+        self.fastest_round_ns = 999999999999
+        self.fastest_round_algo = ""
+        self.lowest_ops_round_val = 999999999999
+        self.lowest_ops_round_algo = ""
+        self.giant_kills = []
+
+        try:
+            import sqlite3
+            import database
+            conn = sqlite3.connect(database.DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM settings WHERE key = 'year'")
+            row = cursor.fetchone()
+            if row:
+                self.year = int(row[0])
+            conn.close()
+        except Exception:
+            pass
+        
+        # Load ratings
+        import database
+        saved_elos = database.get_elo_ratings()
+        for a in self.algos:
+            a['elo'] = saved_elos.get(a['name'], 1500.0)
+            a['tournament_elo_diff'] = 0.0
+            
         self.draw_groups(animated=False)
 
-
     def draw_groups(self, animated=True):
-        ids = list(range(len(self.algos)))
-        self.rng.shuffle(ids)
+        # Sort indices based on current ELO ratings
+        sorted_indices = sorted(range(len(self.algos)), key=lambda i: self.algos[i].get('elo', 1500.0), reverse=True)
+        potA = sorted_indices[0:8]
+        potB = sorted_indices[8:16]
+        potC = sorted_indices[16:24]
+        potD = sorted_indices[24:32]
+        
+        # Shuffle each pot separately
+        self.rng.shuffle(potA)
+        self.rng.shuffle(potB)
+        self.rng.shuffle(potC)
+        self.rng.shuffle(potD)
         
         self.groups = [[] for _ in range(8)]
         
         import terminal_ui
+        import database
         
         if animated:
             terminal_ui.clear_screen()
             print(terminal_ui.draw_trophy_header("GROUP DRAW"))
-            print("\n  Preparing the lottery. 32 algorithms, 8 groups, 4 elements each...")
+            print("\n  Preparing the lottery. 32 algorithms drawn from 4 seeded pots...")
             time.sleep(1.0)
             
-        # Pot drawing
-        for pot in range(4):
+        pots = [potA, potB, potC, potD]
+        for pot_idx in range(4):
+            current_pot = pots[pot_idx]
             if animated:
                 terminal_ui.clear_screen()
-                print(terminal_ui.draw_trophy_header(f"GROUP DRAW - POT {pot + 1}"))
-                terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], opening_pot=pot)
+                print(terminal_ui.draw_trophy_header(f"GROUP DRAW - POT {pot_idx + 1}"))
+                terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], opening_pot=pot_idx)
                 time.sleep(1.0)
                 
             for g in range(8):
-                idx = ids[pot * 8 + g]
+                idx = current_pot[g]
                 self.groups[g].append(idx)
                 self.standings[idx]['group'] = g
                 
+                # Increment group appearance in database (only done when animated, i.e., start of new tournament)
                 if animated:
-                    # Highlight group draw
-                    terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], highlighted_group=g, opening_pot=pot)
+                    database.update_historical_stats(self.algos[idx]['name'], group_stage_inc=1)
+                
+                if animated:
+                    terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], highlighted_group=g, opening_pot=pot_idx)
                     time.sleep(0.15)
                     
         self.build_schedule()
@@ -1234,13 +1996,14 @@ class Tournament:
                 })
 
     def play_group_stage(self):
+        if self.current_stage != "Group Stage":
+            return
         import terminal_ui
-        terminal_ui.clear_screen()
+        import database
         
-        # Start from next_fixture_idx to support resuming
+        terminal_ui.clear_screen()
         start_idx = getattr(self, 'next_fixture_idx', 0)
         
-        # Play fixtures
         for idx in range(start_idx, len(self.fixtures)):
             f = self.fixtures[idx]
             terminal_ui.clear_screen()
@@ -1257,35 +2020,38 @@ class Tournament:
             print(terminal_ui.draw_box("CONCURRENT RUN", box_lines, width=76, color=GREEN))
             time.sleep(0.7)
             
-            # Duel
+            actual_size = self.array_size
+            display_size = None
+            if actual_size > 10000000:
+                display_size = actual_size
+                actual_size = 2000000
+
             res = play_match(
                 self.algos[f['a']],
                 self.algos[f['b']],
                 f"Group {chr(ord('A') + f['group'])} Match {idx + 1} / {len(self.fixtures)}",
                 self.rng,
                 'group',
-                self.array_size,
+                actual_size,
                 self.visual_delay,
-                self.timeout,
+                self.group_timeout,
                 group_id=f['group'],
                 standings=self.standings,
-                algo_names=[a['name'] for a in self.algos]
+                algo_names=[a['name'] for a in self.algos],
+                display_size=display_size,
+                algo_list=self.algos,
+                tournament=self
             )
-
-
             
-            # Record standings
             sa = self.standings[f['a']]
             sb = self.standings[f['b']]
             
             sa['played'] += 1
             sb['played'] += 1
-            
             sa['roundWins'] += res.winsA
             sa['roundLosses'] += res.winsB
             sb['roundWins'] += res.winsB
             sb['roundLosses'] += res.winsA
-            
             sa['ns'] += res.nsA
             sb['ns'] += res.nsB
             
@@ -1304,46 +2070,50 @@ class Tournament:
                 sa['matchLosses'] += 1
             
             self.next_fixture_idx = idx + 1
-            import database
             database.save_tournament(self)
                 
-        # Group stage is fully complete
+        # Group stage complete, transition to Round of 16
         self.current_stage = "ROUND OF 16"
-        import database
+        self.current_bracket = self.qualified()
+        self.bracket_entrants = list(self.current_bracket)
+        
+        # Save knockout appearances
+        for algo_idx in self.current_bracket:
+            database.update_historical_stats(self.algos[algo_idx]['name'], r16_inc=1)
+            
         database.save_tournament(self)
 
-        # Display final group tables (interactive, no auto-skip)
-        page = 0
-        while True:
-            terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=page)
-            k = terminal_ui.read_key(block=True)
-            if k == 'enter':
-                break
-            elif k == 'left' or k == 'h':
-                page = 0
-            elif k == 'right' or k == 'l':
-                page = 1
-
+        if getattr(self, 'autoplay', False):
+            # Auto-scroll page 0 and page 1
+            terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=0)
+            time.sleep(2.0)
+            terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=1)
+            time.sleep(2.0)
+        else:
+            page = 0
+            while True:
+                terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=page)
+                k = terminal_ui.read_key(block=True)
+                if k == 'enter':
+                    break
+                elif k == 'left' or k == 'h':
+                    page = 0
+                elif k == 'right' or k == 'l':
+                    page = 1
 
     def qualified(self):
-        """Finds top 2 algorithms from each group."""
         q = []
         for g in range(8):
             group_stands = [s for s in self.standings if s['group'] == g]
-            # sort standings for this group
             group_stands.sort(key=lambda x: (
                 -x['points'],
                 -x['matchWins'],
                 -(x['roundWins'] - x['roundLosses']),
                 x['ns']
             ))
-            q.append((g, 0, group_stands[0]['algo'])) # 1st place
-            q.append((g, 1, group_stands[1]['algo'])) # 2nd place
+            q.append((g, 0, group_stands[0]['algo']))
+            q.append((g, 1, group_stands[1]['algo']))
             
-        # Draw bracket matches matching C++ qualified() logic
-        # Push 1st place A vs 2nd place B, etc.
-        # Qualified mappings:
-        # A1-B2, C1-D2, E1-F2, G1-H2, B1-A2, D1-C2, F1-E2, H1-G2
         bracket = []
         def find_algo(g, rank):
             for item in q:
@@ -1370,20 +2140,23 @@ class Tournament:
 
     def play_knockouts(self):
         import terminal_ui
+        import database
         
         stages = ["ROUND OF 16", "QUARTER FINALS", "SEMI FINALS", "FINAL"]
         
         if self.current_stage == "Finished":
             if self.current_bracket:
                 champ_name = self.algos[self.current_bracket[0]]['name']
-                self.render_champion(champ_name)
+                self.show_awards_and_champion(champ_name)
             return
             
-        # If we have no bracket, qualify teams
         if not self.current_bracket:
             self.current_bracket = self.qualified()
+            self.bracket_entrants = list(self.current_bracket)
+            for algo_idx in self.current_bracket:
+                database.update_historical_stats(self.algos[algo_idx]['name'], r16_inc=1)
+            database.save_tournament(self)
             
-        # Determine starting stage index
         start_stage_idx = 0
         if self.current_stage in stages:
             start_stage_idx = stages.index(self.current_stage)
@@ -1395,17 +2168,19 @@ class Tournament:
             self.current_stage = stage
             self.current_bracket = list(entrants)
             
-            # Auto-save before each stage
-            import database
             database.save_tournament(self)
             
             terminal_ui.render_bracket_view(entrants, stage, [a['name'] for a in self.algos])
-            print("\n  Press Enter to start this knockout stage...")
-            while True:
-                if terminal_ui.read_key(block=True) == 'enter':
-                    break
+            if getattr(self, 'autoplay', False):
+                time.sleep(2.0)
+            else:
+                print("\n  Press Enter to start this knockout stage...")
+                while True:
+                    if terminal_ui.read_key(block=True) == 'enter':
+                        break
             
             winners = []
+            stage_scores = []
             for i in range(0, len(entrants), 2):
                 a = entrants[i]
                 b = entrants[i + 1]
@@ -1425,44 +2200,246 @@ class Tournament:
                 print(terminal_ui.draw_box("KNOCKOUT LIVE", box_lines, width=76, color=VIOLET))
                 time.sleep(0.7)
                 
+                if stage == "FINAL":
+                    actual_size = self.final_size
+                else:
+                    actual_size = self.knockouts_size
+                
+                if actual_size > 10000000:
+                    display_size = actual_size
+                    actual_size = 2000000
+                else:
+                    display_size = None
+                
+                stage_timeout = self.final_timeout if stage == "FINAL" else self.ko_timeout
                 res = play_match(
                     self.algos[a],
                     self.algos[b],
                     stage,
                     self.rng,
                     'knockout',
-                    1000000,
+                    actual_size,
                     self.visual_delay,
-                    max(15, self.timeout),
+                    stage_timeout,
                     group_id=None,
                     standings=self.standings,
                     algo_names=[al['name'] for al in self.algos],
                     bracket=entrants,
                     current_match_idx=i // 2,
-                    stage_winners=winners
+                    stage_winners=winners,
+                    display_size=display_size,
+                    stage_scores=stage_scores,
+                    algo_list=self.algos,
+                    tournament=self
                 )
 
                 winner_idx = a if res.winner == 0 else b
+                loser_idx = b if res.winner == 0 else a
                 winners.append(winner_idx)
-
                 
+                if stage == "FINAL":
+                    runner_up_idx = loser_idx
+                
+                # Update standings for the consolidated points table to count knockouts
+                sa = self.standings[a]
+                sb = self.standings[b]
+                sa['ko_played'] += 1
+                sb['ko_played'] += 1
+                sa['ko_roundWins'] += res.winsA
+                sa['ko_roundLosses'] += res.winsB
+                sb['ko_roundWins'] += res.winsB
+                sb['ko_roundLosses'] += res.winsA
+                sa['ko_ns'] += res.nsA
+                sb['ko_ns'] += res.nsB
+                
+                if res.winner == 0:
+                    sa['ko_points'] += 3
+                    sa['ko_matchWins'] += 1
+                    sb['ko_matchLosses'] += 1
+                else:
+                    sb['ko_points'] += 3
+                    sb['ko_matchWins'] += 1
+                    sa['ko_matchLosses'] += 1
+                
+                # Save tournament state after every match to update stats/ELO tables immediately
+                database.save_tournament(self)
+                
+                # Record path updates
+                self.paths[self.algos[winner_idx]['name']].append(f"{stage} def {self.algos[loser_idx]['name']}")
+                self.paths[self.algos[loser_idx]['name']].append(f"{stage} lost to {self.algos[winner_idx]['name']}")
+
+                # Log detailed match results for historical stats in database
+                winner_name = self.algos[winner_idx]['name']
+                loser_name = self.algos[loser_idx]['name']
+                score_winner = f"{res.winsA if res.winner == 0 else res.winsB}-{res.winsB if res.winner == 0 else res.winsA}"
+                score_loser = f"{res.winsB if res.winner == 0 else res.winsA}-{res.winsA if res.winner == 0 else res.winsB}"
+                
+                if stage == "ROUND OF 16":
+                    database.update_historical_stats(winner_name, r16_result={"year": self.year, "opponent": loser_name, "score": score_winner, "result": "won"})
+                    database.update_historical_stats(loser_name, r16_result={"year": self.year, "opponent": winner_name, "score": score_loser, "result": "lost"})
+                elif stage == "QUARTER FINALS":
+                    database.update_historical_stats(winner_name, qf_result={"year": self.year, "opponent": loser_name, "score": score_winner, "result": "won"})
+                    database.update_historical_stats(loser_name, qf_result={"year": self.year, "opponent": winner_name, "score": score_loser, "result": "lost"})
+                elif stage == "SEMI FINALS":
+                    database.update_historical_stats(winner_name, sf_result={"year": self.year, "opponent": loser_name, "score": score_winner, "result": "won"})
+                    database.update_historical_stats(loser_name, sf_result={"year": self.year, "opponent": winner_name, "score": score_loser, "result": "lost"})
+
             entrants = winners
             self.current_bracket = list(entrants)
             
-        # Final Champion
+            if stage == "ROUND OF 16":
+                self.current_stage = "QUARTER FINALS"
+                # Save QF apps for the winners
+                for algo_idx in entrants:
+                    database.update_historical_stats(self.algos[algo_idx]['name'], qf_inc=1)
+            elif stage == "QUARTER FINALS":
+                self.current_stage = "SEMI FINALS"
+                # Save SF apps for the winners
+                for algo_idx in entrants:
+                    database.update_historical_stats(self.algos[algo_idx]['name'], sf_inc=1)
+            elif stage == "SEMI FINALS":
+                self.current_stage = "FINAL"
+            elif stage == "FINAL":
+                self.current_stage = "Finished"
+                
+            database.save_tournament(self)
+            
         champ_name = self.algos[entrants[0]]['name']
+        runner_up_name = self.algos[runner_up_idx]['name']
         self.current_stage = "Finished"
-        import database
+        
+        # Record championship and runner-up details in Database / Hall of Fame
+        database.update_historical_stats(champ_name, championship_inc=1, championship_year=self.year)
+        database.update_historical_stats(runner_up_name, runner_up_inc=1, runner_up_year=self.year)
+        
+        # Calculate record string
+        champ_idx = entrants[0]
+        st_champ = self.standings[champ_idx]
+        ko_wins = 4
+        total_wins = st_champ['matchWins'] + ko_wins
+        total_losses = st_champ['matchLosses']
+        total_draws = st_champ['matchDraws']
+        record_str = f"{total_wins}W-{total_losses}L-{total_draws}D"
+        
+        avg_finish = 0.0
+        if self.total_sorted_rounds[champ_name] > 0:
+            avg_finish = (self.total_sorted_time_ns[champ_name] / self.total_sorted_rounds[champ_name]) / 1e9
+            
+        path_str = " -> ".join(self.paths[champ_name])
+        
+        # Add to Hall of Fame
+        database.add_hall_of_fame_entry(champ_name, self.year, record_str, avg_finish, path_str)
+        
         database.save_tournament(self)
-        self.render_champion(champ_name)
+        self.show_awards_and_champion(champ_name)
+        
+        self.reset_season(champ_name)
 
+    def reset_season(self, champ_name="None"):
+        import database
+        # Archive completed tournament season
+        database.archive_tournament_season(
+            self.year,
+            self.standings,
+            getattr(self, 'bracket_entrants', []),
+            self.fixtures,
+            champ_name
+        )
+        
+        # Increment year counter and reset active tournament variables
+        self.year += 1
+        self.current_stage = "Group Stage"
+        self.next_fixture_idx = 0
+        self.groups = [[] for _ in range(8)]
+        self.fixtures = []
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
+        self.current_bracket = []
+        self.bracket_entrants = []
+        
+        self.paths = {a['name']: ["Group Stage"] for a in self.algos}
+        self.total_sorted_rounds = {a['name']: 0 for a in self.algos}
+        self.total_sorted_time_ns = {a['name']: 0 for a in self.algos}
+        self.fastest_round_ns = 999999999999
+        self.fastest_round_algo = ""
+        self.lowest_ops_round_val = 999999999999
+        self.lowest_ops_round_algo = ""
+        self.giant_kills = []
+        
+        # Reset and clear saved tournament in SQLite DB, saving the fresh new season's start state
+        database.delete_saved_tournament()
+        database.save_tournament(self)
+        self.draw_groups(animated=False)
+        database.save_tournament(self)
+
+    def show_awards_and_champion(self, champ_name):
+        import terminal_ui
+        import database
+        
+        # Find worst performer for Wooden Spoon
+        worst_algo = None
+        worst_pts = 999
+        worst_wins = 999
+        worst_diff = 999
+        worst_ns = 0
+        for s in self.standings:
+            pts = s['points']
+            wins = s['matchWins']
+            diff = s['roundWins'] - s['roundLosses']
+            ns = s['ns']
+            # Lowest points, then lowest wins, then lowest diff, then highest time
+            if (pts < worst_pts or 
+                (pts == worst_pts and wins < worst_wins) or 
+                (pts == worst_pts and wins == worst_wins and diff < worst_diff) or
+                (pts == worst_pts and wins == worst_wins and diff == worst_diff and ns > worst_ns)):
+                worst_pts = pts
+                worst_wins = wins
+                worst_diff = diff
+                worst_ns = ns
+                worst_algo = self.algos[s['algo']]['name']
+                
+        # Most memory-efficient (O(1) memory algorithms)
+        # Find all O(1) memory and list their inventors
+        ram_algos = [a['name'] for a in self.algos if a['memory'] == "O(1)"]
+        ram_winner = "Heap Sort / Shell Sort / Bubble / Insertion"
+        
+        # Giant killer winner
+        gk_winner = "None"
+        if self.giant_kills:
+            # Maximum ELO difference defeat
+            best_gk = max(self.giant_kills, key=lambda x: x['elo_diff'])
+            gk_winner = f"{best_gk['winner']} (def. {best_gk['loser']} +{best_gk['elo_diff']:.1f} ELO)"
+            
+        awards = {
+            "champion": champ_name,
+            "fastest_time": f"{self.fastest_round_ns / 1e9:.6f}s ({self.fastest_round_algo})" if self.fastest_round_algo else "N/A",
+            "lowest_ops": f"{self.lowest_ops_round_val:,} ops ({self.lowest_ops_round_algo})" if self.lowest_ops_round_algo else "N/A",
+            "ram_winner": ram_winner,
+            "gk_winner": gk_winner,
+            "wooden_spoon": worst_algo if worst_algo else "N/A"
+        }
+        
+        terminal_ui.render_awards_screen(awards)
+        while True:
+            if terminal_ui.read_key(block=True) == 'enter':
+                break
+                
+        self.render_champion(champ_name)
 
     def render_champion(self, name):
         import terminal_ui
         import random
         import time
         
-        # Access colors from terminal_ui
+        time.sleep(0.5)
+        try:
+            import termios
+            import sys
+            termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+        except Exception:
+            pass
+        while terminal_ui.read_key(block=False) is not None:
+            pass
+            
         GOLD = terminal_ui.GOLD
         RESET = terminal_ui.RESET
         BOLD = terminal_ui.BOLD
@@ -1474,76 +2451,69 @@ class Tournament:
         AMBER = terminal_ui.AMBER
         
         cup = [
-            "                 ___________________________",
-            "              .-'                           '-.",
-            "             /      SORTING WORLD CUP          \\",
-            "            /___________________________________\\",
-            "            |                                   |",
-            "       _____|                                   |_____",
-            "      /     |                                   |     \\",
-            "     /      |                                   |      \\",
-            "     \\      |                                   |      /",
-            "      \\_____|                                   |_____/",
-            "            |                                   |",
-            "            |___________________________________|",
-            "                    \\                 /",
-            "                     \\               /",
-            "                      \\_____________/",
-            "                            | |",
-            "                            | |",
-            "                         ___| |___",
-            "                        /_________\\"
+            "                    .-----.         ",
+            "                  .'   __  '.       ",
+            "                 /   .'  '.  \\      ",
+            "                |   |      |  |     ",
+            "                 \\   '.__.'  /      ",
+            "                  '.       .'       ",
+            "                    )  _  (         ",
+            "                   /  ( )  \\        ",
+            "                  /  /   \\  \\       ",
+            "                 |  |  _  |  |      ",
+            "                 |  | ( ) |  |      ",
+            "                 |  |  V  |  |      ",
+            "                /  /       \\  \\     ",
+            "               |  |         |  |    ",
+            "               |  |=========|  |    ",
+            "               |  |=========|  |    ",
+            "              /  /===========\\  \\   ",
+            "             |_________________|    ",
+            "             |                 |    "
         ]
         
         colors = [RED, GREEN, BLUE, CYAN, VIOLET, AMBER, GOLD]
-        particles = []  # format: [row, col, char, color]
+        particles = []
         frame_count = 0
         
         while True:
-            # Move particles down
             for p in particles:
                 p[0] += 1
-            # Remove offscreen particles
             particles = [p for p in particles if p[0] < 20]
             
-            # Spawn new particles at top (row 0)
             if random.random() < 0.6:
                 particles.append([0, random.randint(0, 7), random.choice(['*', '+', 'o', '•', '★', 'x', '°', '✨']), random.choice(colors)])
             if random.random() < 0.6:
                 particles.append([0, random.randint(64, 71), random.choice(['*', '+', 'o', '•', '★', 'x', '°', '✨']), random.choice(colors)])
                 
-            # Create a 20x72 grid
             grid = [[" "] * 72 for _ in range(20)]
             
-            # Overlay cup in the center
             for r, line in enumerate(cup):
                 pad = (72 - len(line)) // 2
                 for col_idx, char in enumerate(line):
-                    grid[r][pad + col_idx] = GOLD + char + RESET
+                    if (r == 14 or r == 15) and char == "=":
+                        grid[r][pad + col_idx] = GREEN + char + RESET
+                    else:
+                        grid[r][pad + col_idx] = GOLD + char + RESET
                     
-            # Overlay particles in margins
             for p in particles:
                 row, col, char, color = p
                 if 0 <= row < 20 and 0 <= col < 72:
                     grid[row][col] = color + char + RESET
                     
-            # Build TUI content
             content = ["".join(row) for row in grid]
             content.append("")
             
-            # Flashing champion text
             flash_color = colors[frame_count % len(colors)]
             content.append(f" CHAMPION OF THE WORLD: {BOLD}{flash_color}{name.upper()}{RESET}!")
             content.append(" Congratulations to the most optimal sorting engine of 2026!")
             content.append("")
             content.append(" Press Enter to return to Main Menu...")
             
-            # Draw
             header = terminal_ui.draw_trophy_header("TOURNAMENT COMPLETE")
             box = terminal_ui.draw_box("🏆 WORLD CUP CHAMPION 🏆", content, width=76, color=GOLD)
             terminal_ui.write_screen(header + "\n" + box)
             
-            # Check key press (non-blocking)
             k = terminal_ui.read_key(block=False)
             if k == 'enter':
                 break
