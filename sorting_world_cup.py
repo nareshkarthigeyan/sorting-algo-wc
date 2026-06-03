@@ -17,7 +17,12 @@ SCENARIO_NAMES = {
     1: "Unsorted Array - Randomized",
     2: "Unsorted Array - Reversed",
     3: "Unsorted Array - one number unsorted",
-    4: "Unsorted Array - randomized duplicates"
+    4: "Unsorted Array - randomized duplicates",
+    5: "Random with tiny range (0-31)",
+    6: "Random with huge range (0-1B)",
+    7: "Organ Pipe",
+    8: "Sawtooth",
+    9: "Half Reversed Half Sorted"
 }
 
 SCENARIO_DESCRIPTIONS = {
@@ -25,7 +30,12 @@ SCENARIO_DESCRIPTIONS = {
     1: "The classic benchmark: values shuffled into a clean random battlefield.",
     2: "Worst-case pressure for many simple sorts: every value starts in the opposite direction.",
     3: "Almost perfect order with one value displaced; adaptive algorithms get a real chance here.",
-    4: "Many repeated values: partitioning, stability, and counting-style approaches can shine."
+    4: "Many repeated values: partitioning, stability, and counting-style approaches can shine.",
+    5: "Values restricted only between 0 and 31. Heavily favors counting/distribution/radix algorithms.",
+    6: "Massive range of values up to 1,000,000,000. Tests pivot distributions and comparison limits.",
+    7: "Increasing to the middle, then decreasing. Tests symmetric pattern handling.",
+    8: "Repeating ascending sawtooth pattern. Tests block-oriented and run-based sorts.",
+    9: "First half reversed, second half sorted. Tests merges and sub-sequence boundaries."
 }
 
 class CancelledException(Exception):
@@ -1131,6 +1141,282 @@ def bogo_sort(v):
             idx = rng.randint(0, i)
             v.swapAt(i, idx)
 
+# --- Expanded Roster: 8 New Sorting Algorithms ---
+
+def pdq_sort(v):
+    n = v.size()
+    if n <= 1:
+        return
+    pdq_sort_helper(v, 0, n - 1, limit=int(math.log2(n) * 2))
+
+def pdq_sort_helper(v, lo, hi, limit):
+    if hi - lo < 12:
+        # Insertion sort fallback
+        for i in range(lo + 1, hi + 1):
+            val = v.get(i)
+            j = i
+            while j > lo and v.get(j - 1) > val:
+                v.set(j, v.get(j - 1))
+                j -= 1
+            v.set(j, val)
+        return
+    if limit == 0:
+        # Heapsort fallback
+        pdq_heapsort(v, lo, hi)
+        return
+    # Partitioning
+    p = pdq_partition(v, lo, hi)
+    left_len = p - lo
+    right_len = hi - p
+    if left_len < (hi - lo) // 8 or right_len < (hi - lo) // 8:
+        limit -= 1
+    pdq_sort_helper(v, lo, p - 1, limit)
+    pdq_sort_helper(v, p + 1, hi, limit)
+
+def pdq_heapsort(v, lo, hi):
+    n = hi - lo + 1
+    for i in range(n // 2 - 1, -1, -1):
+        pdq_sift_down(v, n, i, lo)
+    for i in range(n - 1, 0, -1):
+        v.swapAt(lo, lo + i)
+        pdq_sift_down(v, i, 0, lo)
+
+def pdq_sift_down(v, n, i, lo):
+    root = i
+    while root * 2 + 1 < n:
+        child = root * 2 + 1
+        if child + 1 < n and v.get(lo + child) < v.get(lo + child + 1):
+            child += 1
+        if v.get(lo + root) < v.get(lo + child):
+            v.swapAt(lo + root, lo + child)
+            root = child
+        else:
+            break
+
+def pdq_partition(v, lo, hi):
+    mid = (lo + hi) // 2
+    if v.get(lo) > v.get(mid):
+        v.swapAt(lo, mid)
+    if v.get(lo) > v.get(hi):
+        v.swapAt(lo, hi)
+    if v.get(mid) > v.get(hi):
+        v.swapAt(mid, hi)
+    v.swapAt(mid, hi)
+    pivot = v.get(hi)
+    i = lo
+    for j in range(lo, hi):
+        if v.get(j) < pivot:
+            v.swapAt(i, j)
+            i += 1
+    v.swapAt(i, hi)
+    return i
+
+def grail_sort(v):
+    n = v.size()
+    grail_sort_helper(v, 0, n - 1)
+
+def grail_sort_helper(v, l, r):
+    if l >= r:
+        return
+    mid = (l + r) // 2
+    grail_sort_helper(v, l, mid)
+    grail_sort_helper(v, mid + 1, r)
+    grail_merge_inplace(v, l, mid, r)
+
+def grail_merge_inplace(v, l, mid, r):
+    i = l
+    j = mid + 1
+    while i <= mid and j <= r:
+        if v.get(i) <= v.get(j):
+            i += 1
+        else:
+            val = v.get(j)
+            k = j
+            while k > i:
+                v.swapAt(k, k - 1)
+                k -= 1
+            i += 1
+            mid += 1
+            j += 1
+
+def flash_sort(v):
+    n = v.size()
+    if n <= 1:
+        return
+    min_val = v.get(0)
+    max_idx = 0
+    for i in range(1, n):
+        val = v.get(i)
+        if val < min_val:
+            min_val = val
+        if val > v.get(max_idx):
+            max_idx = i
+            
+    max_val = v.get(max_idx)
+    if min_val == max_val:
+        return
+        
+    m = int(0.43 * n)
+    if m < 2:
+        m = 2
+        
+    L = [0] * m
+    c1 = (m - 1) / (max_val - min_val)
+    for i in range(n):
+        val = v.get(i)
+        k = max(0, min(m - 1, int(c1 * (val - min_val))))
+        L[k] += 1
+        
+    for k in range(1, m):
+        L[k] += L[k - 1]
+        
+    v.swapAt(0, max_idx)
+    
+    move = 0
+    j = 0
+    k = m - 1
+    while move < n - 1:
+        while j > L[k] - 1:
+            j += 1
+            val = v.get(j)
+            k = max(0, min(m - 1, int(c1 * (val - min_val))))
+        flash_val = v.get(j)
+        while j != L[k]:
+            k = max(0, min(m - 1, int(c1 * (flash_val - min_val))))
+            L[k] -= 1
+            hold = v.get(L[k])
+            v.set(L[k], flash_val)
+            flash_val = hold
+            move += 1
+        j += 1
+        
+    # Insertion sort pass
+    for i in range(1, n):
+        val = v.get(i)
+        j = i
+        while j > 0 and v.get(j - 1) > val:
+            v.set(j, v.get(j - 1))
+            j -= 1
+        v.set(j, val)
+
+def wiki_sort(v):
+    n = v.size()
+    width = 1
+    while width < n:
+        for i in range(0, n, 2 * width):
+            mid = min(i + width - 1, n - 1)
+            r = min(i + 2 * width - 1, n - 1)
+            grail_merge_inplace(v, i, mid, r)
+        width *= 2
+
+def sleep_sort(v):
+    n = v.size()
+    if n <= 1:
+        return
+    heap = []
+    for i in range(n):
+        heap.append(v.get(i))
+        
+    def sift_down(arr, heap_size, root):
+        while root * 2 + 1 < heap_size:
+            child = root * 2 + 1
+            if child + 1 < heap_size and arr[child] > arr[child + 1]:
+                child += 1
+            if arr[root] > arr[child]:
+                arr[root], arr[child] = arr[child], arr[root]
+                root = child
+            else:
+                break
+                
+    for i in range(n // 2 - 1, -1, -1):
+        sift_down(heap, n, i)
+        
+    for i in range(n):
+        min_val = heap[0]
+        v.set(i, min_val)
+        if len(heap) > 1:
+            heap[0] = heap[len(heap) - 1]
+            heap.pop()
+            sift_down(heap, len(heap), 0)
+
+def american_flag_sort(v):
+    n = v.size()
+    if n <= 1:
+        return
+    max_val = v.get(0)
+    for i in range(1, n):
+        val = v.get(i)
+        if val > max_val:
+            max_val = val
+    radix = 10
+    exp = 1
+    while max_val // exp > 0:
+        american_flag_sort_helper(v, 0, n - 1, exp, radix)
+        exp *= radix
+
+def american_flag_sort_helper(v, lo, hi, exp, radix):
+    count = [0] * radix
+    for i in range(lo, hi + 1):
+        digit = (v.get(i) // exp) % radix
+        count[digit] += 1
+    offset = [0] * radix
+    offset[0] = lo
+    for i in range(1, radix):
+        offset[i] = offset[i - 1] + count[i - 1]
+    next_anchor = list(offset)
+    for r in range(radix):
+        limit = offset[r] + count[r] if r < radix - 1 else hi + 1
+        while next_anchor[r] < limit:
+            val = v.get(next_anchor[r])
+            digit = (val // exp) % radix
+            if digit == r:
+                next_anchor[r] += 1
+            else:
+                dest = next_anchor[digit]
+                next_anchor[digit] += 1
+                hold = v.get(dest)
+                v.set(dest, val)
+                v.set(next_anchor[r], hold)
+
+def gravity_sort(v):
+    n = v.size()
+    if n <= 1:
+        return
+    max_val = v.get(0)
+    for i in range(1, n):
+        val = v.get(i)
+        if val > max_val:
+            max_val = val
+    if max_val <= 0:
+        return
+    beads = [0] * max_val
+    for i in range(n):
+        val = v.get(i)
+        for col in range(min(val, max_val)):
+            beads[col] += 1
+    for i in range(n - 1, -1, -1):
+        val = 0
+        for col in range(max_val):
+            if beads[col] > 0:
+                val += 1
+                beads[col] -= 1
+        v.set(i, val)
+
+def slow_sort(v):
+    n = v.size()
+    slow_sort_helper(v, 0, n - 1)
+
+def slow_sort_helper(v, i, j):
+    if i >= j:
+        return
+    m = (i + j) // 2
+    slow_sort_helper(v, i, m)
+    slow_sort_helper(v, m + 1, j)
+    if v.get(m) > v.get(j):
+        v.swapAt(m, j)
+    slow_sort_helper(v, i, j - 1)
+
+
 # --- Algorithms Roster and Metadata ---
 
 def get_algorithms():
@@ -1365,8 +1651,74 @@ def get_algorithms():
             "stable": False, "memory": "O(1)",
             "description": "Shuffles randomly until sorted. Highly inefficient.",
             "personality": "Has absolutely no plan."
+        },
+        # --- NEWCOMERS (DEBUT YEAR 2026) ---
+        {
+            "name": "PDQSort", "sort": pdq_sort, "category": "Elite Contenders",
+            "year": 2016, "inventor": "Orson Peters", "complexity": "O(N log N)",
+            "stable": False, "memory": "O(log N)",
+            "description": "Pattern-Defeating Quicksort. Fast hybrid that adapts to pre-sorted patterns.",
+            "personality": "Ultra-modern speed demon. Hates predictable inputs.",
+            "debut_year": 2026
+        },
+        {
+            "name": "GrailSort", "sort": grail_sort, "category": "Elite Contenders",
+            "year": 2013, "inventor": "Andrey Astrelin", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(1)",
+            "description": "Block Merge Sort. In-place stable merge sort using buffer blocks.",
+            "personality": "Defends stability with absolute minimal resources.",
+            "debut_year": 2026
+        },
+        {
+            "name": "Flash Sort", "sort": flash_sort, "category": "Linear-Time Specialists",
+            "year": 1998, "inventor": "Karl-Dietrich Neubert", "complexity": "O(N)",
+            "stable": False, "memory": "O(1)",
+            "description": "Flashsort. In-place distribution sort utilizing permutation cycles.",
+            "personality": "Flashes through uniform arrays in linear speed.",
+            "debut_year": 2026
+        },
+        {
+            "name": "WikiSort", "sort": wiki_sort, "category": "Elite Contenders",
+            "year": 2014, "inventor": "Mike McFarlane", "complexity": "O(N log N)",
+            "stable": True, "memory": "O(1)",
+            "description": "In-place block merge sort variation optimized for speed and simplicity.",
+            "personality": "Pragmatic divider. Merging without extra room.",
+            "debut_year": 2026
+        },
+        {
+            "name": "Sleep Sort", "sort": sleep_sort, "category": "Weirdos and Memes",
+            "year": 2011, "inventor": "4chan Anonymous", "complexity": "O(N + max(A))",
+            "stable": True, "memory": "O(N)",
+            "description": "Simulated multi-threaded sleeping queue. Rest and rise in order.",
+            "personality": "Extremely relaxed. Takes a nap before doing anything.",
+            "debut_year": 2026
+        },
+        {
+            "name": "American Flag Sort", "sort": american_flag_sort, "category": "Linear-Time Specialists",
+            "year": 1993, "inventor": "Peter McIlroy", "complexity": "O(N * W)",
+            "stable": False, "memory": "O(K)",
+            "description": "In-place bucket-radix sort grouping elements by digits.",
+            "personality": "Patriotic partitioner. Saluting structured values.",
+            "debut_year": 2026
+        },
+        {
+            "name": "Gravity Sort", "sort": gravity_sort, "category": "Weirdos and Memes",
+            "year": 2002, "inventor": "Arulanandham et al.", "complexity": "O(N * Max)",
+            "stable": True, "memory": "O(N * Max)",
+            "description": "Bead Sort. Slides numbers down like beads on gravity poles.",
+            "personality": "Antigravity enthusiast! Let beads fall into place.",
+            "debut_year": 2026
+        },
+        {
+            "name": "Slowsort", "sort": slow_sort, "category": "Weirdos and Memes",
+            "year": 1989, "inventor": "McIlroy et al.", "complexity": "O(N^(log N))",
+            "stable": False, "memory": "O(log N)",
+            "description": "Humorous worst-case sorter. Purely academic.",
+            "personality": "Purely academic. Procrastinates recursively.",
+            "debut_year": 2026
         }
     ]
+
 
 # --- Sorter Runner ---
 
@@ -1467,6 +1819,30 @@ def make_input(scenario_type, n, rng):
             res.append(5 + rng.randint(0, 7) * 11)
         rng.shuffle(res)
         return res
+    elif scenario_type == 5:  # Random with tiny range (0-31)
+        return [rng.randint(0, 31) for _ in range(n)]
+    elif scenario_type == 6:  # Random with huge range (0-1B)
+        return [rng.randint(0, 1_000_000_000) for _ in range(n)]
+    elif scenario_type == 7:  # Organ Pipe
+        half = n // 2
+        first_half = list(range(1, half + 1))
+        second_half = list(range(n - half, 0, -1))
+        if len(first_half) + len(second_half) < n:
+            first_half.append(half + 1)
+        return first_half + second_half
+    elif scenario_type == 8:  # Sawtooth
+        period = max(1, n // 5)
+        res = []
+        for i in range(n):
+            res.append(i % period)
+        return res
+    elif scenario_type == 9:  # Half Reversed Half Sorted
+        half = n // 2
+        first_half = list(range(half, 0, -1))
+        second_half = list(range(half + 1, n + 1))
+        if len(first_half) + len(second_half) < n:
+            first_half.append(half + 1)
+        return first_half + second_half
     return a
 
 def adjacent_disorder(a):
@@ -1545,9 +1921,9 @@ def estimate_win_probability(algoA, algoB):
     perfA = scen_perf.get(algoA['name'], {})
     perfB = scen_perf.get(algoB['name'], {})
     
-    for s_id in range(5):
-        pA = perfA.get(s_id)
-        pB = perfB.get(s_id)
+    for s_id in range(10):
+        pA = perfA.get(s_id) or perfA.get(str(s_id))
+        pB = perfB.get(s_id) or perfB.get(str(s_id))
         if pA and pB:
             if pA['avg_time_ns'] < pB['avg_time_ns']:
                 scen_winsA += 1
@@ -1708,7 +2084,10 @@ def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, 
     return rr
 
 def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, timeout, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None, algo_list=None, tournament=None):
-    scenarios = [0, 1, 2, 3, 4]
+    if mode == 'knockout':
+        scenarios = rng.sample(range(10), 5)
+    else:
+        scenarios = [0, 1, 2, 3, 4]
     winsA = 0
     winsB = 0
     ties = 0
@@ -1902,6 +2281,43 @@ class Tournament:
         self.next_fixture_idx = 0
         self.year = 2026
         
+        # Division details
+        new_algo_names = ["PDQSort", "GrailSort", "Flash Sort", "WikiSort", "Sleep Sort", "American Flag Sort", "Gravity Sort", "Slowsort"]
+        self.wc_teams = [a['name'] for a in self.algos if a['name'] not in new_algo_names]
+        self.challenger_teams = [a['name'] for a in self.algos if a['name'] in new_algo_names]
+        self.relegated_teams = []
+        self.promoted_teams = []
+        self.challenger_cup_winner = ""
+        self.active_cup = "World Cup"
+        
+        # Challenger Cup bracket states
+        self.cc_current_bracket = []
+        self.cc_bracket_entrants = []
+        self.cc_lcp_bracket = []
+        self.cc_lcp_entrants = []
+        
+        # Knockout result details
+        self.knockout_results = {
+            "ROUND OF 16": [],
+            "QUARTER FINALS": [],
+            "SEMI FINALS": [],
+            "FINAL": []
+        }
+        self.cc_knockout_results = {
+            "CHALLENGER QF": [],
+            "CHALLENGER SF": [],
+            "LCP SEMI": [],
+            "CHALLENGER FINAL": [],
+            "LCP FINAL": []
+        }
+        
+        # Cached WC details for end-of-season archiving
+        self.archive_wc_standings = []
+        self.archive_wc_bracket = []
+        self.archive_wc_fixtures = []
+        self.archive_wc_champ = ""
+        self.archive_wc_results = {}
+        
         # Persistent metrics
         self.paths = {a['name']: ["Group Stage"] for a in self.algos}
         self.total_sorted_rounds = {a['name']: 0 for a in self.algos}
@@ -1934,9 +2350,27 @@ class Tournament:
             
         self.draw_groups(animated=False)
 
+    def find_algo_idx_by_name(self, name):
+        for idx, a in enumerate(self.algos):
+            if a['name'] == name:
+                return idx
+        return -1
+
+    def get_decorated_algo_names(self):
+        names = []
+        for a in self.algos:
+            name = a['name']
+            if a.get('debut_year') == self.year:
+                names.append(f"{name} (NEW)")
+            else:
+                names.append(name)
+        return names
+
     def draw_groups(self, animated=True):
+        # Filter indices to only WC teams
+        wc_indices = [self.find_algo_idx_by_name(name) for name in self.wc_teams]
         # Sort indices based on current ELO ratings
-        sorted_indices = sorted(range(len(self.algos)), key=lambda i: self.algos[i].get('elo', 1500.0), reverse=True)
+        sorted_indices = sorted(wc_indices, key=lambda i: self.algos[i].get('elo', 1500.0), reverse=True)
         potA = sorted_indices[0:8]
         potB = sorted_indices[8:16]
         potC = sorted_indices[16:24]
@@ -1949,6 +2383,7 @@ class Tournament:
         self.rng.shuffle(potD)
         
         self.groups = [[] for _ in range(8)]
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
         
         import terminal_ui
         import database
@@ -1965,7 +2400,7 @@ class Tournament:
             if animated:
                 terminal_ui.clear_screen()
                 print(terminal_ui.draw_trophy_header(f"GROUP DRAW - POT {pot_idx + 1}"))
-                terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], opening_pot=pot_idx)
+                terminal_ui.render_group_draw(self.groups, self.get_decorated_algo_names(), opening_pot=pot_idx, num_groups=8)
                 time.sleep(1.0)
                 
             for g in range(8):
@@ -1978,7 +2413,60 @@ class Tournament:
                     database.update_historical_stats(self.algos[idx]['name'], group_stage_inc=1)
                 
                 if animated:
-                    terminal_ui.render_group_draw(self.groups, [a['name'] for a in self.algos], highlighted_group=g, opening_pot=pot_idx)
+                    terminal_ui.render_group_draw(self.groups, self.get_decorated_algo_names(), highlighted_group=g, opening_pot=pot_idx, num_groups=8)
+                    time.sleep(0.15)
+                    
+        self.build_schedule()
+
+    def draw_challenger_groups(self, animated=True):
+        # Challenger Cup teams: relegated_teams + challenger_teams
+        cc_names = list(self.relegated_teams) + list(self.challenger_teams)
+        cc_indices = [self.find_algo_idx_by_name(name) for name in cc_names if name]
+        # Sort them by ELO
+        sorted_cc_indices = sorted(cc_indices, key=lambda i: self.algos[i].get('elo', 1500.0), reverse=True)
+        
+        potA = sorted_cc_indices[0:4]
+        potB = sorted_cc_indices[4:8]
+        potC = sorted_cc_indices[8:12]
+        potD = sorted_cc_indices[12:16]
+        
+        self.rng.shuffle(potA)
+        self.rng.shuffle(potB)
+        self.rng.shuffle(potC)
+        self.rng.shuffle(potD)
+        
+        self.groups = [[] for _ in range(4)]
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
+        
+        import terminal_ui
+        import database
+        
+        if animated:
+            terminal_ui.clear_screen()
+            print(terminal_ui.draw_trophy_header("CHALLENGER CUP DRAW"))
+            print("\n  Preparing the lottery. 16 challenger algorithms drawn from 4 seeded pots...")
+            time.sleep(1.0)
+            
+        pots = [potA, potB, potC, potD]
+        for pot_idx in range(4):
+            current_pot = pots[pot_idx]
+            if animated:
+                terminal_ui.clear_screen()
+                print(terminal_ui.draw_trophy_header(f"CHALLENGER DRAW - POT {pot_idx + 1}"))
+                terminal_ui.render_group_draw(self.groups, self.get_decorated_algo_names(), opening_pot=pot_idx, num_groups=4)
+                time.sleep(1.0)
+                
+            for g in range(4):
+                idx = current_pot[g]
+                self.groups[g].append(idx)
+                self.standings[idx]['group'] = g
+                
+                # Increment group appearance in database (only done when animated, i.e., start of new tournament)
+                if animated:
+                    database.update_historical_stats(self.algos[idx]['name'], group_stage_inc=1)
+                
+                if animated:
+                    terminal_ui.render_group_draw(self.groups, self.get_decorated_algo_names(), highlighted_group=g, opening_pot=pot_idx, num_groups=4)
                     time.sleep(0.15)
                     
         self.build_schedule()
@@ -1986,8 +2474,10 @@ class Tournament:
     def build_schedule(self):
         self.fixtures = []
         pairs = [(0, 1), (2, 3), (0, 2), (1, 3), (0, 3), (1, 2)]
+        num_groups = len(self.groups)
+        active_groups = [g for g in range(num_groups) if len(self.groups[g]) == 4]
         for round_idx in range(6):
-            for g in range(8):
+            for g in active_groups:
                 g1, g2 = pairs[round_idx]
                 self.fixtures.append({
                     'group': g,
@@ -1995,8 +2485,35 @@ class Tournament:
                     'b': self.groups[g][g2]
                 })
 
+    def challenger_qualified(self):
+        q = []
+        for g in range(4):
+            group_stands = [s for s in self.standings if s['group'] == g]
+            group_stands.sort(key=lambda x: (
+                -x['points'],
+                -x['matchWins'],
+                -(x['roundWins'] - x['roundLosses']),
+                x['ns']
+            ))
+            q.append((g, 0, group_stands[0]['algo']))
+            q.append((g, 1, group_stands[1]['algo']))
+            
+        def find_algo(g, rank):
+            for item in q:
+                if item[0] == g and item[1] == rank:
+                    return item[2]
+            return -1
+            
+        bracket = [
+            find_algo(0, 0), find_algo(1, 1), # A1 vs B2
+            find_algo(1, 0), find_algo(0, 1), # B1 vs A2
+            find_algo(2, 0), find_algo(3, 1), # C1 vs D2
+            find_algo(3, 0), find_algo(2, 1)  # D1 vs C2
+        ]
+        return bracket
+
     def play_group_stage(self):
-        if self.current_stage != "Group Stage":
+        if self.current_stage not in ["Group Stage", "Challenger Group Stage"]:
             return
         import terminal_ui
         import database
@@ -2025,7 +2542,7 @@ class Tournament:
             if actual_size > 10000000:
                 display_size = actual_size
                 actual_size = 2000000
-
+ 
             res = play_match(
                 self.algos[f['a']],
                 self.algos[f['b']],
@@ -2037,7 +2554,7 @@ class Tournament:
                 self.group_timeout,
                 group_id=f['group'],
                 standings=self.standings,
-                algo_names=[a['name'] for a in self.algos],
+                algo_names=self.get_decorated_algo_names(),
                 display_size=display_size,
                 algo_list=self.algos,
                 tournament=self
@@ -2072,33 +2589,43 @@ class Tournament:
             self.next_fixture_idx = idx + 1
             database.save_tournament(self)
                 
-        # Group stage complete, transition to Round of 16
-        self.current_stage = "ROUND OF 16"
-        self.current_bracket = self.qualified()
-        self.bracket_entrants = list(self.current_bracket)
-        
-        # Save knockout appearances
-        for algo_idx in self.current_bracket:
-            database.update_historical_stats(self.algos[algo_idx]['name'], r16_inc=1)
+        # Group stage complete
+        if self.active_cup == "World Cup":
+            self.current_stage = "ROUND OF 16"
+            self.current_bracket = self.qualified()
+            self.bracket_entrants = list(self.current_bracket)
+            for algo_idx in self.current_bracket:
+                database.update_historical_stats(self.algos[algo_idx]['name'], r16_inc=1)
+        else:
+            self.current_stage = "CHALLENGER QF"
+            self.cc_current_bracket = self.challenger_qualified()
+            self.cc_bracket_entrants = list(self.cc_current_bracket)
+            self.cc_lcp_bracket = []
+            self.cc_lcp_entrants = []
+            for algo_idx in self.cc_current_bracket:
+                database.update_historical_stats(self.algos[algo_idx]['name'], qf_inc=1)
             
         database.save_tournament(self)
-
+ 
         if getattr(self, 'autoplay', False):
-            # Auto-scroll page 0 and page 1
-            terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=0)
-            time.sleep(2.0)
-            terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=1)
-            time.sleep(2.0)
+            if self.active_cup == "World Cup":
+                terminal_ui.render_standings_view(self.standings, self.get_decorated_algo_names(), page=0)
+                time.sleep(2.0)
+                terminal_ui.render_standings_view(self.standings, self.get_decorated_algo_names(), page=1)
+                time.sleep(2.0)
+            else:
+                terminal_ui.render_standings_view(self.standings, self.get_decorated_algo_names(), page=0, num_groups=4)
+                time.sleep(2.0)
         else:
             page = 0
             while True:
-                terminal_ui.render_standings_view(self.standings, [a['name'] for a in self.algos], page=page)
+                terminal_ui.render_standings_view(self.standings, self.get_decorated_algo_names(), page=page, num_groups=(4 if self.active_cup == "Challenger Cup" else 8))
                 k = terminal_ui.read_key(block=True)
                 if k == 'enter':
                     break
-                elif k == 'left' or k == 'h':
+                elif (k == 'left' or k == 'h') and self.active_cup == "World Cup":
                     page = 0
-                elif k == 'right' or k == 'l':
+                elif (k == 'right' or k == 'l') and self.active_cup == "World Cup":
                     page = 1
 
     def qualified(self):
@@ -2139,6 +2666,10 @@ class Tournament:
         return bracket
 
     def play_knockouts(self):
+        if getattr(self, "active_cup", "World Cup") == "Challenger Cup":
+            self.play_challenger_knockouts()
+            return
+
         import terminal_ui
         import database
         
@@ -2170,14 +2701,32 @@ class Tournament:
             
             database.save_tournament(self)
             
-            terminal_ui.render_bracket_view(entrants, stage, [a['name'] for a in self.algos])
+            bracket_data = {
+                "wc": list(self.bracket_entrants),
+                "wc_results": getattr(self, "knockout_results", {})
+            }
+            if stage == "ROUND OF 16":
+                default_page = 0
+            elif stage == "QUARTER FINALS":
+                default_page = 1
+            else:
+                default_page = 2
+                
             if getattr(self, 'autoplay', False):
+                terminal_ui.render_bracket_view(bracket_data, stage, self.get_decorated_algo_names(), page=default_page)
                 time.sleep(2.0)
             else:
-                print("\n  Press Enter to start this knockout stage...")
+                page = default_page
                 while True:
-                    if terminal_ui.read_key(block=True) == 'enter':
+                    terminal_ui.render_bracket_view(bracket_data, stage, self.get_decorated_algo_names(), page=page)
+                    print("\n  Use ← / → Arrows to browse bracket. Press Enter to start this knockout stage...")
+                    k = terminal_ui.read_key(block=True)
+                    if k == 'enter':
                         break
+                    elif k == 'left' or k == 'h':
+                        page = max(0, page - 1)
+                    elif k == 'right' or k == 'l':
+                        page = min(2, page + 1)
             
             winners = []
             stage_scores = []
@@ -2223,7 +2772,7 @@ class Tournament:
                     stage_timeout,
                     group_id=None,
                     standings=self.standings,
-                    algo_names=[al['name'] for al in self.algos],
+                    algo_names=self.get_decorated_algo_names(),
                     bracket=entrants,
                     current_match_idx=i // 2,
                     stage_winners=winners,
@@ -2261,6 +2810,21 @@ class Tournament:
                     sb['ko_matchWins'] += 1
                     sa['ko_matchLosses'] += 1
                 
+                # Record result detail
+                match_result_dict = {
+                    "algoA": self.algos[a]['name'],
+                    "algoB": self.algos[b]['name'],
+                    "winsA": res.winsA,
+                    "winsB": res.winsB,
+                    "winner": self.algos[winner_idx]['name'],
+                    "loser": self.algos[loser_idx]['name']
+                }
+                if not hasattr(self, 'knockout_results') or self.knockout_results is None:
+                    self.knockout_results = {"ROUND OF 16": [], "QUARTER FINALS": [], "SEMI FINALS": [], "FINAL": []}
+                if stage not in self.knockout_results:
+                    self.knockout_results[stage] = []
+                self.knockout_results[stage].append(match_result_dict)
+
                 # Save tournament state after every match to update stats/ELO tables immediately
                 database.save_tournament(self)
                 
@@ -2337,39 +2901,401 @@ class Tournament:
 
     def reset_season(self, champ_name="None"):
         import database
-        # Archive completed tournament season
+        # 1. Cache World Cup results
+        self.archive_wc_standings = list(self.standings)
+        self.archive_wc_bracket = list(self.bracket_entrants)
+        self.archive_wc_fixtures = list(self.fixtures)
+        self.archive_wc_champ = champ_name
+        self.archive_wc_results = dict(self.knockout_results) if hasattr(self, 'knockout_results') and self.knockout_results else {}
+        
+        # 2. Determine relegation: Rank all 32 World Cup teams using current season consolidated standings
+        current_list = []
+        for s in self.standings:
+            name = self.algos[s['algo']]['name']
+            if name in self.wc_teams:
+                played = s['played'] + s.get('ko_played', 0)
+                points = s['points'] + s.get('ko_points', 0)
+                wins = s['matchWins'] + s.get('ko_matchWins', 0)
+                draws = s['matchDraws']
+                losses = s['matchLosses'] + s.get('ko_matchLosses', 0)
+                r_wins = s['roundWins'] + s.get('ko_roundWins', 0)
+                r_losses = s['roundLosses'] + s.get('ko_roundLosses', 0)
+                ns = s['ns'] + s.get('ko_ns', 0)
+                current_list.append({
+                    'name': name,
+                    'points': points,
+                    'matchWins': wins,
+                    'roundWins': r_wins,
+                    'roundLosses': r_losses,
+                    'ns': ns
+                })
+        current_list.sort(key=lambda x: (
+            -x['points'],
+            -x['matchWins'],
+            -(x['roundWins'] - x['roundLosses']),
+            x['ns']
+        ))
+        
+        relegated_objs = current_list[24:32]
+        self.relegated_teams = [obj['name'] for obj in relegated_objs]
+        
+        retained_objs = current_list[0:24]
+        self.wc_teams = [obj['name'] for obj in retained_objs]
+        
+        # 3. Transition to Challenger Cup
+        self.active_cup = "Challenger Cup"
+        self.current_stage = "Challenger Group Stage"
+        self.next_fixture_idx = 0
+        self.cc_current_bracket = []
+        self.cc_bracket_entrants = []
+        self.cc_lcp_bracket = []
+        self.cc_lcp_entrants = []
+        
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
+        self.groups = [[] for _ in range(4)]
+        self.fixtures = []
+        
+        database.delete_saved_tournament()
+        database.save_tournament(self)
+        self.draw_challenger_groups(animated=False)
+        database.save_tournament(self)
+
+    def play_challenger_knockouts(self):
+        import terminal_ui
+        import database
+        
+        stages = ["CHALLENGER QF", "CHALLENGER SF", "LCP SEMI", "CHALLENGER FINAL", "LCP FINAL"]
+        
+        if self.current_stage == "Challenger Finished":
+            if self.challenger_cup_winner:
+                self.show_challenger_awards_and_champion(self.challenger_cup_winner)
+            return
+            
+        if self.current_stage not in stages:
+            self.current_stage = "CHALLENGER QF"
+            self.cc_current_bracket = self.challenger_qualified()
+            self.cc_bracket_entrants = list(self.cc_current_bracket)
+            self.cc_lcp_bracket = []
+            self.cc_lcp_entrants = []
+            for algo_idx in self.cc_current_bracket:
+                database.update_historical_stats(self.algos[algo_idx]['name'], qf_inc=1)
+            database.save_tournament(self)
+
+        start_stage_idx = stages.index(self.current_stage)
+        
+        for stage_idx in range(start_stage_idx, len(stages)):
+            stage = stages[stage_idx]
+            self.current_stage = stage
+            database.save_tournament(self)
+            
+            if stage in ["CHALLENGER QF", "CHALLENGER SF", "CHALLENGER FINAL"]:
+                entrants = list(self.cc_current_bracket)
+            else:
+                entrants = list(self.cc_lcp_bracket)
+                
+            if not entrants:
+                continue
+                
+            cc_bracket_data = {
+                "cc_main": list(self.cc_bracket_entrants),
+                "cc_lcp": list(self.cc_lcp_entrants),
+                "cc_results": getattr(self, "cc_knockout_results", {})
+            }
+            
+            if stage == "CHALLENGER QF":
+                default_page = 0
+            elif stage in ["CHALLENGER SF", "CHALLENGER FINAL"]:
+                default_page = 1
+            else:
+                default_page = 2
+                
+            if getattr(self, 'autoplay', False):
+                terminal_ui.render_challenger_bracket_view(cc_bracket_data, stage, self.get_decorated_algo_names(), page=default_page)
+                time.sleep(2.0)
+            else:
+                page = default_page
+                while True:
+                    terminal_ui.render_challenger_bracket_view(cc_bracket_data, stage, self.get_decorated_algo_names(), page=page)
+                    print(f"\n  Use ← / → Arrows to browse bracket. Press Enter to start {stage} stage...")
+                    k = terminal_ui.read_key(block=True)
+                    if k == 'enter':
+                        break
+                    elif k == 'left' or k == 'h':
+                        page = max(0, page - 1)
+                    elif k == 'right' or k == 'l':
+                        page = min(2, page + 1)
+                        
+            winners = []
+            losers = []
+            stage_scores = []
+            
+            for i in range(0, len(entrants), 2):
+                a = entrants[i]
+                b = entrants[i + 1]
+                
+                terminal_ui.clear_screen()
+                print(terminal_ui.draw_simple_header(f"{stage} MATCH"))
+                
+                box_lines = [
+                    f" Challenger Duel - Stage: {stage}",
+                    "",
+                    f"   {BOLD}{CYAN}{self.algos[a]['name']}{RESET}",
+                    f"        {BOLD}{FG_MUTED}VS{RESET}",
+                    f"   {BOLD}{VIOLET}{self.algos[b]['name']}{RESET}",
+                    "",
+                    " Single-elimination: first sorted finish wins."
+                ]
+                print(terminal_ui.draw_box("KNOCKOUT LIVE", box_lines, width=76, color=VIOLET))
+                time.sleep(0.7)
+                
+                if stage in ["CHALLENGER FINAL", "LCP FINAL"]:
+                    actual_size = self.final_size
+                else:
+                    actual_size = self.knockouts_size
+                    
+                if actual_size > 10000000:
+                    display_size = actual_size
+                    actual_size = 2000000
+                else:
+                    display_size = None
+                    
+                stage_timeout = self.final_timeout if stage in ["CHALLENGER FINAL", "LCP FINAL"] else self.ko_timeout
+                
+                res = play_match(
+                    self.algos[a],
+                    self.algos[b],
+                    stage,
+                    self.rng,
+                    'knockout',
+                    actual_size,
+                    self.visual_delay,
+                    stage_timeout,
+                    group_id=None,
+                    standings=self.standings,
+                    algo_names=self.get_decorated_algo_names(),
+                    bracket=entrants,
+                    current_match_idx=i // 2,
+                    stage_winners=winners,
+                    display_size=display_size,
+                    stage_scores=stage_scores,
+                    algo_list=self.algos,
+                    tournament=self
+                )
+                
+                winner_idx = a if res.winner == 0 else b
+                loser_idx = b if res.winner == 0 else a
+                winners.append(winner_idx)
+                losers.append(loser_idx)
+                
+                sa = self.standings[a]
+                sb = self.standings[b]
+                sa['ko_played'] += 1
+                sb['ko_played'] += 1
+                sa['ko_roundWins'] += res.winsA
+                sa['ko_roundLosses'] += res.winsB
+                sb['ko_roundWins'] += res.winsB
+                sb['ko_roundLosses'] += res.winsA
+                sa['ko_ns'] += res.nsA
+                sb['ko_ns'] += res.nsB
+                if res.winner == 0:
+                    sa['ko_points'] += 3
+                    sa['ko_matchWins'] += 1
+                    sb['ko_matchLosses'] += 1
+                else:
+                    sb['ko_points'] += 3
+                    sb['ko_matchWins'] += 1
+                    sa['ko_matchLosses'] += 1
+                # Record result detail
+                match_result_dict = {
+                    "algoA": self.algos[a]['name'],
+                    "algoB": self.algos[b]['name'],
+                    "winsA": res.winsA,
+                    "winsB": res.winsB,
+                    "winner": self.algos[winner_idx]['name'],
+                    "loser": self.algos[loser_idx]['name']
+                }
+                if not hasattr(self, 'cc_knockout_results') or self.cc_knockout_results is None:
+                    self.cc_knockout_results = {
+                        "CHALLENGER QF": [],
+                        "CHALLENGER SF": [],
+                        "LCP SEMI": [],
+                        "CHALLENGER FINAL": [],
+                        "LCP FINAL": []
+                    }
+                if stage not in self.cc_knockout_results:
+                    self.cc_knockout_results[stage] = []
+                self.cc_knockout_results[stage].append(match_result_dict)
+
+                database.save_tournament(self)
+                
+                self.paths[self.algos[winner_idx]['name']].append(f"{stage} def {self.algos[loser_idx]['name']}")
+                self.paths[self.algos[loser_idx]['name']].append(f"{stage} lost to {self.algos[winner_idx]['name']}")
+                
+                winner_name = self.algos[winner_idx]['name']
+                loser_name = self.algos[loser_idx]['name']
+                score_winner = f"{res.winsA if res.winner == 0 else res.winsB}-{res.winsB if res.winner == 0 else res.winsA}"
+                score_loser = f"{res.winsB if res.winner == 0 else res.winsA}-{res.winsA if res.winner == 0 else res.winsB}"
+                
+                if stage == "CHALLENGER QF":
+                    database.update_historical_stats(winner_name, qf_result={"year": self.year, "opponent": loser_name, "score": score_winner, "result": "won"})
+                    database.update_historical_stats(loser_name, qf_result={"year": self.year, "opponent": winner_name, "score": score_loser, "result": "lost"})
+                elif stage == "CHALLENGER SF":
+                    database.update_historical_stats(winner_name, sf_result={"year": self.year, "opponent": loser_name, "score": score_winner, "result": "won"})
+                    database.update_historical_stats(loser_name, sf_result={"year": self.year, "opponent": winner_name, "score": score_loser, "result": "lost"})
+                    
+            if stage == "CHALLENGER QF":
+                self.cc_current_bracket = list(winners)
+                self.cc_lcp_bracket = list(losers)
+                self.cc_bracket_entrants = list(winners)
+                self.cc_lcp_entrants = list(losers)
+                
+                self.current_stage = "CHALLENGER SF"
+                
+                self.promoted_teams = [self.algos[w_idx]['name'] for w_idx in winners]
+                
+                for algo_idx in self.cc_current_bracket:
+                    database.update_historical_stats(self.algos[algo_idx]['name'], sf_inc=1)
+                for algo_idx in self.cc_lcp_bracket:
+                    database.update_historical_stats(self.algos[algo_idx]['name'], sf_inc=1)
+                    
+            elif stage == "CHALLENGER SF":
+                self.cc_current_bracket = list(winners)
+                self.current_stage = "LCP SEMI"
+                
+            elif stage == "LCP SEMI":
+                self.cc_lcp_bracket = list(winners)
+                self.current_stage = "CHALLENGER FINAL"
+                
+                for lcp_ent in entrants:
+                    name = self.algos[lcp_ent]['name']
+                    if name not in self.promoted_teams:
+                        self.promoted_teams.append(name)
+                        
+            elif stage == "CHALLENGER FINAL":
+                champ_idx = winners[0]
+                champ_name = self.algos[champ_idx]['name']
+                self.challenger_cup_winner = champ_name
+                
+                self.algos[champ_idx]['elo'] = self.algos[champ_idx].get('elo', 1500.0) + 100.0
+                self.algos[champ_idx]['tournament_elo_diff'] = self.algos[champ_idx].get('tournament_elo_diff', 0.0) + 100.0
+                database.save_elo_ratings({champ_name: self.algos[champ_idx]['elo']})
+                
+                self.paths[champ_name].append(f"Won Challenger Cup")
+                self.current_stage = "LCP FINAL"
+                
+            elif stage == "LCP FINAL":
+                self.current_stage = "Challenger Finished"
+                
+            database.save_tournament(self)
+            
+        self.show_challenger_awards_and_champion(self.challenger_cup_winner)
+        self.reset_season_challenger()
+
+    def show_challenger_awards_and_champion(self, champ_name):
+        import terminal_ui
+        terminal_ui.clear_screen()
+        header = terminal_ui.draw_trophy_header("CHALLENGER CUP CHAMPION")
+        
+        lines = [
+            f"   {BOLD}{GOLD}🏆 CHALLENGER CUP CHAMPION: {champ_name} 🏆{RESET}",
+            "",
+            f"   The winner receives: Automatic World Cup Qualification",
+            f"   and a {BOLD}{GREEN}+100 Elo bonus{RESET} for the next season!",
+            "",
+            f"   {BOLD}PROMOTED TO DIVISION 1 (WORLD CUP):{RESET}",
+            f"     " + ", ".join(self.promoted_teams),
+            "",
+            f"   {BOLD}REMAINING IN DIVISION 2 (CHALLENGER CUP):{RESET}",
+            f"     " + ", ".join(self.challenger_teams),
+            "",
+            "   Press Enter to advance to the next season..."
+        ]
+        box = terminal_ui.draw_box("CHALLENGER SUMMARY", lines, width=76, color=terminal_ui.GOLD)
+        terminal_ui.write_screen(header + "\n" + box)
+        while True:
+            if terminal_ui.read_key(block=True) == 'enter':
+                break
+
+    def reset_season_challenger(self):
+        import database
+        # Fallback if reset is done before completion of Challenger Cup knockouts
+        if not self.promoted_teams:
+            try:
+                q_indices = self.challenger_qualified()
+                self.promoted_teams = [self.algos[i]['name'] for i in q_indices]
+            except Exception:
+                # Absolute fallback
+                self.promoted_teams = list(self.challenger_teams)[:8]
+                
+        if not self.challenger_cup_winner and self.promoted_teams:
+            self.challenger_cup_winner = self.promoted_teams[0]
+
+        # 1. Determine bottom 8 remaining in D2
+        all_cc_teams = list(self.relegated_teams) + list(self.challenger_teams)
+        self.challenger_teams = [name for name in all_cc_teams if name not in self.promoted_teams]
+        
+        # 2. Roster WC for next season
+        self.wc_teams = list(self.wc_teams) + list(self.promoted_teams)
+        
+        # 3. Save dual-cup archives
         database.archive_tournament_season(
             self.year,
-            self.standings,
-            getattr(self, 'bracket_entrants', []),
-            self.fixtures,
-            champ_name
+            self.archive_wc_standings,
+            self.archive_wc_bracket,
+            self.archive_wc_fixtures,
+            self.archive_wc_champ,
+            cc_standings=self.standings,
+            cc_bracket=self.cc_bracket_entrants if self.cc_bracket_entrants else self.cc_current_bracket,
+            cc_fixtures=self.fixtures,
+            cc_champ=self.challenger_cup_winner,
+            cc_lcp_bracket=self.cc_lcp_bracket,
+            wc_results=getattr(self, "archive_wc_results", {}),
+            cc_results=getattr(self, "cc_knockout_results", {})
         )
         
-        # Increment year counter and reset active tournament variables
+        # 4. Increment year and reset
         self.year += 1
+        self.active_cup = "World Cup"
         self.current_stage = "Group Stage"
         self.next_fixture_idx = 0
+        self.relegated_teams = []
+        self.promoted_teams = []
+        self.challenger_cup_winner = ""
+        
+        self.cc_current_bracket = []
+        self.cc_bracket_entrants = []
+        self.cc_lcp_bracket = []
+        self.cc_lcp_entrants = []
+        
+        self.archive_wc_standings = []
+        self.archive_wc_bracket = []
+        self.archive_wc_fixtures = []
+        self.archive_wc_champ = ""
+        self.archive_wc_results = {}
+        
+        self.knockout_results = {
+            "ROUND OF 16": [],
+            "QUARTER FINALS": [],
+            "SEMI FINALS": [],
+            "FINAL": []
+        }
+        self.cc_knockout_results = {
+            "CHALLENGER QF": [],
+            "CHALLENGER SF": [],
+            "LCP SEMI": [],
+            "CHALLENGER FINAL": [],
+            "LCP FINAL": []
+        }
+        
+        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
         self.groups = [[] for _ in range(8)]
         self.fixtures = []
-        self.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(self.algos))]
-        self.current_bracket = []
-        self.bracket_entrants = []
         
-        self.paths = {a['name']: ["Group Stage"] for a in self.algos}
-        self.total_sorted_rounds = {a['name']: 0 for a in self.algos}
-        self.total_sorted_time_ns = {a['name']: 0 for a in self.algos}
-        self.fastest_round_ns = 999999999999
-        self.fastest_round_algo = ""
-        self.lowest_ops_round_val = 999999999999
-        self.lowest_ops_round_algo = ""
-        self.giant_kills = []
-        
-        # Reset and clear saved tournament in SQLite DB, saving the fresh new season's start state
         database.delete_saved_tournament()
         database.save_tournament(self)
         self.draw_groups(animated=False)
         database.save_tournament(self)
+
 
     def show_awards_and_champion(self, champ_name):
         import terminal_ui

@@ -1,0 +1,1848 @@
+[
+    {
+        "label": "threading",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "threading",
+        "description": "threading",
+        "detail": "threading",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "sorting_world_cup",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "traceback",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "traceback",
+        "description": "traceback",
+        "detail": "traceback",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "sqlite3",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sqlite3",
+        "description": "sqlite3",
+        "detail": "sqlite3",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "random",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "random",
+        "description": "random",
+        "detail": "random",
+        "documentation": {}
+    },
+    {
+        "label": "terminal_ui",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "RESET",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BOLD",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "CYAN",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "FG_MUTED",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "VIOLET",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "GREEN",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "GOLD",
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "isExtraImport": true,
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "database",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "database",
+        "description": "database",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "math",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "math",
+        "description": "math",
+        "detail": "math",
+        "documentation": {}
+    },
+    {
+        "label": "SimpleNamespace",
+        "importPath": "types",
+        "description": "types",
+        "isExtraImport": true,
+        "detail": "types",
+        "documentation": {}
+    },
+    {
+        "label": "select",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "select",
+        "description": "select",
+        "detail": "select",
+        "documentation": {}
+    },
+    {
+        "label": "tty",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "tty",
+        "description": "tty",
+        "detail": "tty",
+        "documentation": {}
+    },
+    {
+        "label": "termios",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "termios",
+        "description": "termios",
+        "detail": "termios",
+        "documentation": {}
+    },
+    {
+        "label": "contextlib",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "contextlib",
+        "description": "contextlib",
+        "detail": "contextlib",
+        "documentation": {}
+    },
+    {
+        "label": "patched_run_sorter",
+        "kind": 2,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "def patched_run_sorter(*args, **kwargs):\n    try:\n        return original_run_sorter(*args, **kwargs)\n    except Exception as e:\n        print(f\"Patched run_sorter caught: {type(e).__name__}: {e}\")\n        traceback.print_exc()\n        raise\nsorting_world_cup.run_sorter = patched_run_sorter\ndef debug_algo(algo_name, algo_fn):\n    print(f\"\\n--- Debugging {algo_name} on size 10,000 ---\")",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "debug_algo",
+        "kind": 2,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "def debug_algo(algo_name, algo_fn):\n    print(f\"\\n--- Debugging {algo_name} on size 10,000 ---\")\n    arr = list(range(10000, 0, -1)) # Reversed array of size 10,000\n    st = sorting_world_cup.VisualState(algo_name)\n    cancel = threading.Event()\n    pause = threading.Event()\n    paused_ns = sorting_world_cup.Accumulator()\n    worker = threading.Thread(\n        target=original_run_sorter, # We target the original so we can catch inside or see final state\n        args=(algo_fn, arr, st, cancel, pause, paused_ns, 0.0)",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "original_run_sorter",
+        "kind": 5,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "original_run_sorter = sorting_world_cup.run_sorter\ndef patched_run_sorter(*args, **kwargs):\n    try:\n        return original_run_sorter(*args, **kwargs)\n    except Exception as e:\n        print(f\"Patched run_sorter caught: {type(e).__name__}: {e}\")\n        traceback.print_exc()\n        raise\nsorting_world_cup.run_sorter = patched_run_sorter\ndef debug_algo(algo_name, algo_fn):",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "sorting_world_cup.run_sorter",
+        "kind": 5,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "sorting_world_cup.run_sorter = patched_run_sorter\ndef debug_algo(algo_name, algo_fn):\n    print(f\"\\n--- Debugging {algo_name} on size 10,000 ---\")\n    arr = list(range(10000, 0, -1)) # Reversed array of size 10,000\n    st = sorting_world_cup.VisualState(algo_name)\n    cancel = threading.Event()\n    pause = threading.Event()\n    paused_ns = sorting_world_cup.Accumulator()\n    worker = threading.Thread(\n        target=original_run_sorter, # We target the original so we can catch inside or see final state",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "algos",
+        "kind": 5,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "algos = sorting_world_cup.get_algorithms()\nstooge = next(a for a in algos if a['name'] == \"Stooge Sort\")\nslow = next(a for a in algos if a['name'] == \"Slow Sort\")\ndebug_algo(\"Stooge Sort\", stooge['sort'])\ndebug_algo(\"Slow Sort\", slow['sort'])",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "stooge",
+        "kind": 5,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "stooge = next(a for a in algos if a['name'] == \"Stooge Sort\")\nslow = next(a for a in algos if a['name'] == \"Slow Sort\")\ndebug_algo(\"Stooge Sort\", stooge['sort'])\ndebug_algo(\"Slow Sort\", slow['sort'])",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "slow",
+        "kind": 5,
+        "importPath": "scratch.debug_cancel",
+        "description": "scratch.debug_cancel",
+        "peekOfCode": "slow = next(a for a in algos if a['name'] == \"Slow Sort\")\ndebug_algo(\"Stooge Sort\", stooge['sort'])\ndebug_algo(\"Slow Sort\", slow['sort'])",
+        "detail": "scratch.debug_cancel",
+        "documentation": {}
+    },
+    {
+        "label": "left_trophy",
+        "kind": 5,
+        "importPath": "scratch.print_cup",
+        "description": "scratch.print_cup",
+        "peekOfCode": "left_trophy = [\n    \"       .-----.     \",\n    \"     .'   __  '.   \",\n    \"    /   .'  '.  \\\\  \",\n    \"   |   |      |  | \",\n    \"    \\\\   '.__.'  /  \",\n    \"     '.       .'   \",\n    \"       )  _  (     \",\n    \"      /  ( )  \\\\    \",\n    \"     /  /   \\\\  \\\\   \",",
+        "detail": "scratch.print_cup",
+        "documentation": {}
+    },
+    {
+        "label": "right_trophy",
+        "kind": 5,
+        "importPath": "scratch.print_cup",
+        "description": "scratch.print_cup",
+        "peekOfCode": "right_trophy = left_trophy\nmid_block = [\n    \"                                      \", # L0\n    \"                                      \", # L1\n    \"                                      \", # L2\n    \"                                      \", # L3\n    \"                                      \", # L4\n    \"                                      \", # L5\n    \"                                      \", # L6\n    \"            .-=========-.             \", # L7",
+        "detail": "scratch.print_cup",
+        "documentation": {}
+    },
+    {
+        "label": "mid_block",
+        "kind": 5,
+        "importPath": "scratch.print_cup",
+        "description": "scratch.print_cup",
+        "peekOfCode": "mid_block = [\n    \"                                      \", # L0\n    \"                                      \", # L1\n    \"                                      \", # L2\n    \"                                      \", # L3\n    \"                                      \", # L4\n    \"                                      \", # L5\n    \"                                      \", # L6\n    \"            .-=========-.             \", # L7\n    \"           /             \\\\            \", # L8",
+        "detail": "scratch.print_cup",
+        "documentation": {}
+    },
+    {
+        "label": "init_db",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def init_db(db_path=DB_FILE):\n    \"\"\"Initializes the SQLite tables for storing tournament state and global stats.\"\"\"\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    # Metadata/Settings table\n    cursor.execute(\"\"\"\n    CREATE TABLE IF NOT EXISTS settings (\n        key TEXT PRIMARY KEY,\n        value TEXT\n    )",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "has_saved_tournament",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def has_saved_tournament(db_path=DB_FILE):\n    \"\"\"Checks if there is a saved group draw in the database.\"\"\"\n    if not os.path.exists(db_path):\n        return False\n    try:\n        conn = sqlite3.connect(db_path)\n        cursor = conn.cursor()\n        cursor.execute(\"SELECT COUNT(*) FROM group_assignments\")\n        count = cursor.fetchone()[0]\n        conn.close()",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "save_tournament",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def save_tournament(tournament, db_path=DB_FILE):\n    \"\"\"Saves the entire state of a Tournament instance to SQLite.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    elo_state = {}\n    elo_diffs = {}\n    for a in tournament.algos:\n        elo_state[a['name']] = a.get('elo', 1500.0)\n        elo_diffs[a['name']] = a.get('tournament_elo_diff', 0.0)",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "load_tournament",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def load_tournament(tournament, db_path=DB_FILE):\n    \"\"\"Loads the tournament state from SQLite into a Tournament instance.\"\"\"\n    if not has_saved_tournament(db_path):\n        return False\n    try:\n        conn = sqlite3.connect(db_path)\n        cursor = conn.cursor()\n        cursor.execute(\"SELECT key, value FROM settings\")\n        settings_dict = dict(cursor.fetchall())\n        if \"year\" in settings_dict:",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "delete_saved_tournament",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def delete_saved_tournament(db_path=DB_FILE):\n    \"\"\"Deletes temporary active tournament state settings to start a fresh season.\"\"\"\n    if not os.path.exists(db_path):\n        return\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"DELETE FROM group_assignments\")\n    cursor.execute(\"DELETE FROM standings\")\n    cursor.execute(\"DELETE FROM bracket\")\n    # Delete running settings except the current year counter",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_elo_ratings",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_elo_ratings(db_path=DB_FILE):\n    \"\"\"Loads all saved ELO ratings. Defaults to 1500.0 if not set.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"SELECT algo_name, rating FROM elo_ratings\")\n    res = dict(cursor.fetchall())\n    conn.close()\n    return res\ndef save_elo_ratings(ratings, db_path=DB_FILE):",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "save_elo_ratings",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def save_elo_ratings(ratings, db_path=DB_FILE):\n    \"\"\"Saves a dictionary of elo ratings {algo_name: rating}.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    data = [(name, rating) for name, rating in ratings.items()]\n    cursor.executemany(\"INSERT OR REPLACE INTO elo_ratings (algo_name, rating) VALUES (?, ?)\", data)\n    conn.commit()\n    conn.close()\ndef get_historical_stats(db_path=DB_FILE):",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_historical_stats",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_historical_stats(db_path=DB_FILE):\n    \"\"\"Loads historical stats for all algorithms.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        SELECT algo_name, played, won, lost, draws, points, round_wins, round_losses, fastest_ns, longest_ns, \n               group_stage, r16_apps, qf_apps, sf_apps, championships, championship_years, \n               runner_up_count, runner_up_years, r16_results, qf_results, sf_results, \n               total_sorted_time_ns, total_sorted_rounds",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "update_historical_stats",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def update_historical_stats(algo_name, match_played=0, match_won=0, match_lost=0, match_draws=0, points_inc=0,\n                            round_wins=0, round_losses=0, round_time_ns=-1, group_stage_inc=0,\n                            r16_inc=0, qf_inc=0, sf_inc=0, championship_inc=0, championship_year=None,\n                            runner_up_inc=0, runner_up_year=None, r16_result=None, qf_result=None, sf_result=None,\n                            total_sorted_time_ns_inc=0, total_sorted_rounds_inc=0, db_path=DB_FILE):\n    \"\"\"Updates historical stats for a single algorithm, preserving records and list tracking.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_hall_of_fame",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_hall_of_fame(db_path=DB_FILE):\n    \"\"\"Retrieves all Hall of Fame champion entries.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"SELECT champion_name, year, record, avg_finish_time, path FROM hall_of_fame ORDER BY id DESC\")\n    rows = cursor.fetchall()\n    conn.close()\n    hof = []\n    for r in rows:",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "add_hall_of_fame_entry",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def add_hall_of_fame_entry(champion_name, year, record, avg_finish_time, path, db_path=DB_FILE):\n    \"\"\"Adds a champion entry to the Hall of Fame.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        INSERT INTO hall_of_fame (champion_name, year, record, avg_finish_time, path)\n        VALUES (?, ?, ?, ?, ?)\n    \"\"\", (champion_name, year, record, avg_finish_time, path))\n    conn.commit()",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_scenario_performance",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_scenario_performance(db_path=DB_FILE):\n    \"\"\"Retrieves scenario statistics for all algorithms.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"SELECT algo_name, scenario_id, total_time_ns, total_ops, runs FROM scenario_performance\")\n    rows = cursor.fetchall()\n    conn.close()\n    perf = {}\n    for r in rows:",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "update_scenario_performance",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def update_scenario_performance(algo_name, scenario_id, time_ns, ops, db_path=DB_FILE):\n    \"\"\"Updates scenario stats for an algorithm, incrementing run count and adding time and operation counts.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        SELECT total_time_ns, total_ops, runs FROM scenario_performance\n        WHERE algo_name = ? AND scenario_id = ?\n    \"\"\", (algo_name, scenario_id))\n    row = cursor.fetchone()",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "archive_tournament_season",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def archive_tournament_season(year, standings, bracket, fixtures, champion, cc_standings=None, cc_bracket=None, cc_fixtures=None, cc_champ=None, cc_lcp_bracket=None, wc_results=None, cc_results=None, db_path=DB_FILE):\n    \"\"\"Stores the complete standings, bracket tree, fixtures, and champion name of a season.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    if cc_standings is not None:\n        standings_data = {\"wc\": standings, \"cc\": cc_standings}\n        bracket_data = {\n            \"wc\": bracket,\n            \"cc_main\": cc_bracket,",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_archived_seasons",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_archived_seasons(db_path=DB_FILE):\n    \"\"\"Retrieves all archived years/seasons in descending order.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"SELECT year, champion FROM tournament_archives ORDER BY year DESC\")\n    rows = cursor.fetchall()\n    conn.close()\n    decoded = []\n    for yr, champ in rows:",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "get_archived_season_details",
+        "kind": 2,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "def get_archived_season_details(year, db_path=DB_FILE):\n    \"\"\"Retrieves detailed archived records for a specific tournament year.\"\"\"\n    init_db(db_path)\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    cursor.execute(\"SELECT standings_json, bracket_json, fixtures_json, champion FROM tournament_archives WHERE year = ?\", (year,))\n    row = cursor.fetchone()\n    conn.close()\n    if row:\n        try:",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "DB_FILE",
+        "kind": 5,
+        "importPath": "database",
+        "description": "database",
+        "peekOfCode": "DB_FILE = \"tournament.db\"\ndef init_db(db_path=DB_FILE):\n    \"\"\"Initializes the SQLite tables for storing tournament state and global stats.\"\"\"\n    conn = sqlite3.connect(db_path)\n    cursor = conn.cursor()\n    # Metadata/Settings table\n    cursor.execute(\"\"\"\n    CREATE TABLE IF NOT EXISTS settings (\n        key TEXT PRIMARY KEY,\n        value TEXT",
+        "detail": "database",
+        "documentation": {}
+    },
+    {
+        "label": "run_self_test",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_self_test():\n    algos = sorting_world_cup.get_algorithms()\n    print(f\"Running self-test for {len(algos)} Python sorting algorithms...\")\n    scenarios = [0, 1, 2, 3, 4]\n    rng = random.Random(20260531)\n    failures = 0\n    for algo in algos:\n        for scen in scenarios:\n            input_arr = sorting_world_cup.make_input(scen, 6, rng)\n            st = sorting_world_cup.VisualState(algo['name'])",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "prompt_custom_value",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def prompt_custom_value(prompt_text, val_type=int):\n    \"\"\"Temporarily restores terminal, prompts user for a custom value, validates it, and re-initializes terminal.\"\"\"\n    import terminal_ui\n    import time\n    terminal_ui.restore_terminal()\n    print(\"\\n\" + \"=\" * 60)\n    print(\" CUSTOM SETTING CONFIGURATION\")\n    print(\"=\" * 60)\n    try:\n        val_str = input(f\" {prompt_text}: \").strip()",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "get_next_preset",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def get_next_preset(current_val, presets, direction):\n    if current_val in presets:\n        idx = presets.index(current_val)\n        return presets[(idx + direction) % len(presets)]\n    else:\n        closest = min(presets, key=lambda x: abs(x - current_val))\n        idx = presets.index(closest)\n        return presets[(idx + direction) % len(presets)]\ndef run_settings(settings):\n    \"\"\"Sub-menu for modifying running settings with presets cycling and manual custom input.\"\"\"",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_settings",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_settings(settings):\n    \"\"\"Sub-menu for modifying running settings with presets cycling and manual custom input.\"\"\"\n    array_sizes = [1000, 5000, 10000, 50000, 100000]\n    knockouts_sizes = [50000, 100000, 200000, 500000, 1000000]\n    final_sizes = [100000, 500000, 1000000, 5000000, 10000000]\n    delays = [0.0, 0.0001, 0.0005, 0.001, 0.002, 0.005, 0.010]\n    timeouts = [5, 10, 15, 20, 30, 60, 120, 240]\n    selected_idx = 0\n    while True:\n        terminal_ui.render_settings_menu(",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_exhibition_match",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_exhibition_match(idx, algos, settings, rng):\n    \"\"\"Runs a legendary showcase duel between selected algorithms.\"\"\"\n    if idx == 0:\n        a_name, b_name = \"Quick Sort\", \"Merge Sort\"\n        size = 5000\n    elif idx == 1:\n        a_name, b_name = \"Timsort\", \"IntroSort\"\n        size = 5000\n    elif idx == 2:\n        a_name, b_name = \"Bogo Sort\", \"Stooge Sort\"",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_battle_royale",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_battle_royale(algos, settings, rng):\n    \"\"\"Runs an 8-way concurrent sorting Battle Royale with vertical progress visualization.\"\"\"\n    names = [\"IntroSort\", \"Timsort\", \"Merge Sort\", \"Quick Sort\", \"3-Way Quick Sort\", \"Heap Sort\", \"Counting Sort\", \"Radix Sort (LSD)\"]\n    selected_algos = [a for a in algos if a['name'] in names]\n    size = 5000\n    input_arr = sorting_world_cup.make_input(1, size, rng)  # Randomized\n    states = [sorting_world_cup.VisualState(a['name']) for a in selected_algos]\n    cancel_events = [threading.Event() for _ in range(8)]\n    pause_events = [threading.Event() for _ in range(8)]\n    accumulators = [sorting_world_cup.Accumulator() for _ in range(8)]",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_exhibitions",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_exhibitions(algos, settings, rng):\n    \"\"\"Controller for the exhibition side-events sub-menu.\"\"\"\n    selected_idx = 0\n    while True:\n        terminal_ui.render_exhibition_menu(selected_idx)\n        key = terminal_ui.read_key(block=True)\n        if key == 'up' or key == 'k':\n            selected_idx = (selected_idx - 1) % 5\n        elif key == 'down' or key == 'j':\n            selected_idx = (selected_idx + 1) % 5",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_scenario_strengths",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_scenario_strengths(algos, tournament):\n    \"\"\"Displays the scenario performance heatmap rankings.\"\"\"\n    perf = database.get_scenario_performance()\n    algo_names = tournament.get_decorated_algo_names()\n    page = 0\n    while True:\n        terminal_ui.render_scenario_strengths_view(perf, algo_names, page=page)\n        k = terminal_ui.read_key(block=True)\n        if k == 'enter':\n            break",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "run_hall_of_fame",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def run_hall_of_fame():\n    \"\"\"Scrolls through the Hall of Fame champ records.\"\"\"\n    hof = database.get_hall_of_fame()\n    while True:\n        terminal_ui.render_hall_of_fame_view(hof)\n        k = terminal_ui.read_key(block=True)\n        if k == 'enter':\n            break\ndef main():\n    if len(sys.argv) > 1 and sys.argv[1] == \"--self-test\":",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def main():\n    if len(sys.argv) > 1 and sys.argv[1] == \"--self-test\":\n        sys.exit(run_self_test())\n    # Database migration/init\n    database.init_db()\n    import atexit\n    atexit.register(terminal_ui.restore_terminal)\n    terminal_ui.init_terminal()\n    try:\n        algos = sorting_world_cup.get_algorithms()",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "CancelledException",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class CancelledException(Exception):\n    \"\"\"Exception thrown when a sorting algorithm is cancelled during a race.\"\"\"\n    pass\nclass SortContext:\n    def __init__(self, cancel_flag, pause_flag, paused_ns_accum, mask=4095):\n        self.cancel_flag = cancel_flag\n        self.pause_flag = pause_flag\n        self.paused_ns_accum = paused_ns_accum\n        self.counter = 0\n        self.mask = mask",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "SortContext",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class SortContext:\n    def __init__(self, cancel_flag, pause_flag, paused_ns_accum, mask=4095):\n        self.cancel_flag = cancel_flag\n        self.pause_flag = pause_flag\n        self.paused_ns_accum = paused_ns_accum\n        self.counter = 0\n        self.mask = mask\n    def check(self):\n        self.counter += 1\n        if (self.counter & 1023) == 0:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "VisualArray",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class VisualArray:\n    def __init__(self, arr, state, context, visual_delay=0.0, publish_mask=4095, scale_factor=1.0):\n        self.arr = list(arr)\n        self.st = state\n        self.context = context\n        self.visual_delay = visual_delay\n        self.operations = 0\n        self.reads = 0\n        self.writes = 0\n        self.publish_mask = publish_mask",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "VisualState",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class VisualState:\n    def __init__(self, name=\"\"):\n        self.lock = threading.Lock()\n        self.name = name\n        self.sample = []\n        self.final_values = []\n        self.hotA = -1\n        self.hotB = -1\n        self.done = False\n        self.cancelled = False",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "RaceResult",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class RaceResult:\n    def __init__(self):\n        self.winner_slot = 0\n        self.tie = False\n        self.nsA = 0\n        self.nsB = 0\n        self.opsA = 0\n        self.opsB = 0\n        self.sortedA = False\n        self.sortedB = False",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "MatchResult",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class MatchResult:\n    def __init__(self):\n        self.winner = -1\n        self.loser = -1\n        self.tie = False\n        self.winsA = 0\n        self.winsB = 0\n        self.ties = 0\n        self.nsA = 0\n        self.nsB = 0",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "BSTNode",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class BSTNode:\n    def __init__(self, val):\n        self.val = val\n        self.left = None\n        self.right = None\n        self.count = 1\ndef tree_sort(v):\n    n = v.size()\n    if n == 0:\n        return",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "Accumulator",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class Accumulator:\n    def __init__(self):\n        self.value = 0\ndef run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_accum, visual_delay, scale_factor=1.0):\n    if visual_delay > 0:\n        target = max(1, int(0.033 / visual_delay))\n        mask = 1\n        while mask < target:\n            mask = (mask << 1) | 1\n        mask = min(511, mask)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "Tournament",
+        "kind": 6,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "class Tournament:\n    def __init__(self, algos, array_size=100000, knockouts_size=1000000, final_size=10000000, visual_delay=0.0, group_timeout=30, ko_timeout=60, final_timeout=240, autoplay=False):\n        self.algos = algos\n        self.array_size = array_size\n        self.knockouts_size = knockouts_size\n        self.final_size = final_size\n        self.visual_delay = visual_delay\n        self.group_timeout = group_timeout\n        self.ko_timeout = ko_timeout\n        self.final_timeout = final_timeout",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "intro_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def intro_sort(v):\n    n = v.size()\n    max_depth = 2 * math.floor(math.log2(n)) if n > 0 else 0\n    intro_sort_helper(v, 0, n - 1, max_depth)\ndef intro_sort_helper(v, lo, hi, depth_limit):\n    v.check()\n    if hi - lo <= 16:\n        # Insertion sort for small ranges\n        for i in range(lo + 1, hi + 1):\n            key = v.get(i)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "intro_sort_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def intro_sort_helper(v, lo, hi, depth_limit):\n    v.check()\n    if hi - lo <= 16:\n        # Insertion sort for small ranges\n        for i in range(lo + 1, hi + 1):\n            key = v.get(i)\n            j = i - 1\n            while j >= lo and v.get(j) > key:\n                v.set(j + 1, v.get(j))\n                j -= 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "intro_heapsort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def intro_heapsort(v, lo, hi):\n    n = hi - lo + 1\n    for i in range(n // 2 - 1, -1, -1):\n        intro_heapify(v, n, i, lo)\n    for i in range(n - 1, 0, -1):\n        v.swapAt(lo, lo + i)\n        intro_heapify(v, i, 0, lo)\ndef intro_heapify(v, n, i, lo):\n    v.check()\n    largest = i",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "intro_heapify",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def intro_heapify(v, n, i, lo):\n    v.check()\n    largest = i\n    l = 2 * i + 1\n    r = 2 * i + 2\n    if l < n and v.get(lo + l) > v.get(lo + largest):\n        largest = l\n    if r < n and v.get(lo + r) > v.get(lo + largest):\n        largest = r\n    if largest != i:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "get_minrun",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def get_minrun(n):\n    r = 0\n    while n >= 64:\n        r |= (n & 1)\n        n >>= 1\n    return n + r\ndef tim_sort(v):\n    n = v.size()\n    if n < 2:\n        return",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "tim_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def tim_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    minrun = get_minrun(n)\n    runs = []\n    i = 0\n    while i < n:\n        v.check()\n        start = i",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "merge_timsort_runs",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def merge_timsort_runs(v, run1, run2):\n    start1, len1 = run1\n    start2, len2 = run2\n    merge_range(v, start1, start1 + len1 - 1, start2 + len2 - 1)\n    return (start1, len1 + len2)\ndef merge_range(v, l, m, r):\n    left = [v.get(i) for i in range(l, m + 1)]\n    right = [v.get(i) for i in range(m + 1, r + 1)]\n    i = j = 0\n    k = l",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "merge_range",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def merge_range(v, l, m, r):\n    left = [v.get(i) for i in range(l, m + 1)]\n    right = [v.get(i) for i in range(m + 1, r + 1)]\n    i = j = 0\n    k = l\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            v.set(k, left[i])\n            i += 1\n        else:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "merge_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def merge_sort(v):\n    n = v.size()\n    curr_size = 1\n    while curr_size < n:\n        left = 0\n        while left < n - 1:\n            mid = min(left + curr_size - 1, n - 1)\n            right = min(left + 2 * curr_size - 1, n - 1)\n            merge_range(v, left, mid, right)\n            left += 2 * curr_size",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "quick_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def quick_sort(v):\n    stack = [(0, v.size() - 1)]\n    while stack:\n        lo, hi = stack.pop()\n        while hi - lo > 24:\n            v.check()\n            mid = lo + (hi - lo) // 2\n            if v.get(mid) < v.get(lo): v.swapAt(mid, lo)\n            if v.get(hi) < v.get(lo): v.swapAt(hi, lo)\n            if v.get(hi) < v.get(mid): v.swapAt(hi, mid)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "quick3_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def quick3_sort(v):\n    stack = [(0, v.size() - 1)]\n    while stack:\n        lo, hi = stack.pop()\n        if lo >= hi:\n            continue\n        if hi - lo <= 24:\n            for i in range(lo + 1, hi + 1):\n                key = v.get(i)\n                j = i - 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "heapify",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def heapify(v, n, i):\n    v.check()\n    largest = i\n    l = 2 * i + 1\n    r = 2 * i + 2\n    if l < n and v.get(l) > v.get(largest):\n        largest = l\n    if r < n and v.get(r) > v.get(largest):\n        largest = r\n    if largest != i:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "heap_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def heap_sort(v):\n    n = v.size()\n    for i in range(n // 2 - 1, -1, -1):\n        heapify(v, n, i)\n    for i in range(n - 1, 0, -1):\n        v.swapAt(0, i)\n        heapify(v, i, 0)\ndef shell_sort(v):\n    gaps = [701, 301, 132, 57, 23, 10, 4, 1]\n    n = v.size()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "shell_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def shell_sort(v):\n    gaps = [701, 301, 132, 57, 23, 10, 4, 1]\n    n = v.size()\n    for gap in gaps:\n        if gap >= n:\n            continue\n        for i in range(gap, n):\n            temp = v.get(i)\n            j = i\n            while j >= gap and v.get(j - gap) > temp:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "natural_merge_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def natural_merge_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    done = False\n    while not done:\n        done = True\n        l = 0\n        while l < n:\n            m = l",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "counting_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def counting_sort(v):\n    n = v.size()\n    if n == 0:\n        return\n    mn = mx = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        mn = min(mn, val)\n        mx = max(mx, val)\n    count = [0] * (mx - mn + 1)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "radix_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def radix_sort(v):\n    n = v.size()\n    if n == 0:\n        return\n    mx = 0\n    for i in range(n):\n        mx = max(mx, v.get(i))\n    exp = 1\n    while mx // exp > 0:\n        output = [0] * n",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "msd_radix_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def msd_radix_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    mx = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        if val > mx:\n            mx = val\n    exp = 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "msd_radix_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def msd_radix_helper(v, lo, hi, exp):\n    if lo >= hi or exp <= 0:\n        return\n    v.check()\n    n = hi - lo + 1\n    count = [0] * 11\n    for i in range(lo, hi + 1):\n        digit = (v.get(i) // exp) % 10\n        count[digit + 1] += 1\n    for i in range(1, 10):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bucket_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bucket_sort(v):\n    n = v.size()\n    if n == 0:\n        return\n    mn = mx = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        mn = min(mn, val)\n        mx = max(mx, val)\n    bucket_count = max(1, int(math.sqrt(n)))",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pigeonhole_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pigeonhole_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    mn = mx = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        mn = min(mn, val)\n        mx = max(mx, val)\n    size = mx - mn + 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "tree_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def tree_sort(v):\n    n = v.size()\n    if n == 0:\n        return\n    root = BSTNode(v.get(0))\n    for i in range(1, n):\n        v.check()\n        val = v.get(i)\n        curr = root\n        while True:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "tournament_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def tournament_sort(v):\n    a = v.data()\n    out = []\n    while a:\n        v.check()\n        min_i = 0\n        for i in range(1, len(a)):\n            if a[i] < a[min_i]:\n                min_i = i\n        out.append(a[min_i])",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "strand_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def strand_sort(v):\n    n = v.size()\n    input_list = [v.get(i) for i in range(n)]\n    output = []\n    while input_list:\n        v.check()\n        strand = [input_list.pop(0)]\n        i = 0\n        while i < len(input_list):\n            v.check()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bitonic_merge",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bitonic_merge(v, low, count, up):\n    v.check()\n    if count <= 1:\n        return\n    k = count // 2\n    for i in range(low, low + k):\n        if (v.get(i) > v.get(i + k)) == up:\n            v.swapAt(i, i + k)\n    bitonic_merge(v, low, k, up)\n    bitonic_merge(v, low + k, k, up)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bitonic_sort_rec",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bitonic_sort_rec(v, low, count, up):\n    v.check()\n    if count <= 1:\n        return\n    k = count // 2\n    bitonic_sort_rec(v, low, k, True)\n    bitonic_sort_rec(v, low + k, k, False)\n    bitonic_merge(v, low, count, up)\ndef bitonic_sort(v):\n    n = v.size()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bitonic_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bitonic_sort(v):\n    n = v.size()\n    power = 1\n    while power < n:\n        power <<= 1\n    a = v.data()\n    sentinel = 0 if not a else max(a) + 1\n    while len(a) < power:\n        a.append(sentinel)\n        sentinel += 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "insertion_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def insertion_sort(v):\n    n = v.size()\n    for i in range(1, n):\n        key = v.get(i)\n        j = i - 1\n        while j >= 0 and v.get(j) > key:\n            v.set(j + 1, v.get(j))\n            j -= 1\n        v.set(j + 1, key)\ndef binary_insertion_sort(v):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "binary_insertion_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def binary_insertion_sort(v):\n    n = v.size()\n    for i in range(1, n):\n        key = v.get(i)\n        left = 0\n        right = i\n        while left < right:\n            mid = left + (right - left) // 2\n            if key < v.get(mid):\n                right = mid",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "selection_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def selection_sort(v):\n    n = v.size()\n    for i in range(n):\n        min_i = i\n        for j in range(i + 1, n):\n            if v.get(j) < v.get(min_i):\n                min_i = j\n        v.swapAt(i, min_i)\ndef cycle_sort(v):\n    n = v.size()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "cycle_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def cycle_sort(v):\n    n = v.size()\n    for cycle_start in range(n - 1):\n        item = v.get(cycle_start)\n        pos = cycle_start\n        for i in range(cycle_start + 1, n):\n            if v.get(i) < item:\n                pos += 1\n        if pos == cycle_start:\n            continue",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pancake_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pancake_sort(v):\n    def flip(k):\n        i = 0\n        while i < k:\n            v.swapAt(i, k)\n            i += 1\n            k -= 1\n    for curr in range(v.size(), 1, -1):\n        max_i = 0\n        for i in range(1, curr):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "comb_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def comb_sort(v):\n    n = v.size()\n    gap = n\n    swapped = True\n    while gap != 1 or swapped:\n        gap = max(1, (gap * 10) // 13)\n        swapped = False\n        for i in range(n - gap):\n            if v.get(i) > v.get(i + gap):\n                v.swapAt(i, i + gap)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "gnome_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def gnome_sort(v):\n    i = 0\n    n = v.size()\n    while i < n:\n        if i == 0 or v.get(i - 1) <= v.get(i):\n            i += 1\n        else:\n            v.swapAt(i - 1, i)\n            i -= 1\ndef bubble_sort(v):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bubble_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bubble_sort(v):\n    n = v.size()\n    for i in range(n):\n        changed = False\n        for j in range(n - i - 1):\n            if v.get(j) > v.get(j + 1):\n                v.swapAt(j, j + 1)\n                changed = True\n        if not changed:\n            return",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "cocktail_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def cocktail_sort(v):\n    start = 0\n    end = v.size() - 1\n    swapped = True\n    while swapped:\n        swapped = False\n        for i in range(start, end):\n            if v.get(i) > v.get(i + 1):\n                v.swapAt(i, i + 1)\n                swapped = True",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "odd_even_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def odd_even_sort(v):\n    sorted_flag = False\n    n = v.size()\n    while not sorted_flag:\n        sorted_flag = True\n        for i in range(1, n - 1, 2):\n            if v.get(i) > v.get(i + 1):\n                v.swapAt(i, i + 1)\n                sorted_flag = False\n        for i in range(0, n - 1, 2):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "smooth_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def smooth_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    lp = [1, 1, 3, 5, 9, 15, 25, 41, 67, 109, 177, 287, 465, 753, 1221, 1977, 3199, 5177, 8377, 13555, 21933, 35489, 57423, 92913, 150337, 243251, 393589, 636841, 1030431, 1667273, 2697705, 4364979]\n    heap_sizes = []\n    for i in range(n):\n        v.check()\n        if len(heap_sizes) >= 2 and heap_sizes[-2] == heap_sizes[-1] + 1:\n            heap_sizes.pop()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "smooth_sift_up",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def smooth_sift_up(v, r, heap_sizes, lp):\n    i = len(heap_sizes) - 1\n    while i > 0:\n        v.check()\n        prev_r = r - lp[heap_sizes[i]]\n        val_r = v.get(r)\n        val_prev = v.get(prev_r)\n        if val_prev <= val_r:\n            break\n        size = heap_sizes[i]",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "smooth_sift_down",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def smooth_sift_down(v, r, size, lp):\n    while size >= 2:\n        v.check()\n        child1 = r - 1\n        child2 = r - lp[size - 2] - 1\n        val1 = v.get(child1)\n        val2 = v.get(child2)\n        val_r = v.get(r)\n        if val_r >= val1 and val_r >= val2:\n            break",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "patience_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def patience_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    piles = []\n    for i in range(n):\n        val = v.get(i)\n        lo = 0\n        hi = len(piles)\n        while lo < hi:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "library_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def library_sort(v):\n    n = v.size()\n    if n < 2:\n        return\n    gapped_size = 2 * n\n    gapped = [None] * gapped_size\n    gapped[0] = v.get(0)\n    inserted = 1\n    target = 1\n    for i in range(1, n):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "stooge_sort_rec",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def stooge_sort_rec(v, l, h):\n    v.check()\n    if l >= h:\n        return\n    if v.get(l) > v.get(h):\n        v.swapAt(l, h)\n    if h - l + 1 > 2:\n        t = (h - l + 1) // 3\n        stooge_sort_rec(v, l, h - t)\n        stooge_sort_rec(v, l + t, h)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "stooge_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def stooge_sort(v):\n    stooge_sort_rec(v, 0, v.size() - 1)\ndef visual_is_sorted(v):\n    for i in range(1, v.size()):\n        if v.get(i - 1) > v.get(i):\n            return False\n    return True\ndef bogo_sort(v):\n    rng = random.Random(1234567)\n    n = v.size()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "visual_is_sorted",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def visual_is_sorted(v):\n    for i in range(1, v.size()):\n        if v.get(i - 1) > v.get(i):\n            return False\n    return True\ndef bogo_sort(v):\n    rng = random.Random(1234567)\n    n = v.size()\n    while not visual_is_sorted(v):\n        for i in range(n - 1, 0, -1):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "bogo_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def bogo_sort(v):\n    rng = random.Random(1234567)\n    n = v.size()\n    while not visual_is_sorted(v):\n        for i in range(n - 1, 0, -1):\n            idx = rng.randint(0, i)\n            v.swapAt(i, idx)\n# --- Expanded Roster: 8 New Sorting Algorithms ---\ndef pdq_sort(v):\n    n = v.size()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pdq_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pdq_sort(v):\n    n = v.size()\n    if n <= 1:\n        return\n    pdq_sort_helper(v, 0, n - 1, limit=int(math.log2(n) * 2))\ndef pdq_sort_helper(v, lo, hi, limit):\n    if hi - lo < 12:\n        # Insertion sort fallback\n        for i in range(lo + 1, hi + 1):\n            val = v.get(i)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pdq_sort_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pdq_sort_helper(v, lo, hi, limit):\n    if hi - lo < 12:\n        # Insertion sort fallback\n        for i in range(lo + 1, hi + 1):\n            val = v.get(i)\n            j = i\n            while j > lo and v.get(j - 1) > val:\n                v.set(j, v.get(j - 1))\n                j -= 1\n            v.set(j, val)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pdq_heapsort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pdq_heapsort(v, lo, hi):\n    n = hi - lo + 1\n    for i in range(n // 2 - 1, -1, -1):\n        pdq_sift_down(v, n, i, lo)\n    for i in range(n - 1, 0, -1):\n        v.swapAt(lo, lo + i)\n        pdq_sift_down(v, i, 0, lo)\ndef pdq_sift_down(v, n, i, lo):\n    root = i\n    while root * 2 + 1 < n:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pdq_sift_down",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pdq_sift_down(v, n, i, lo):\n    root = i\n    while root * 2 + 1 < n:\n        child = root * 2 + 1\n        if child + 1 < n and v.get(lo + child) < v.get(lo + child + 1):\n            child += 1\n        if v.get(lo + root) < v.get(lo + child):\n            v.swapAt(lo + root, lo + child)\n            root = child\n        else:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "pdq_partition",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def pdq_partition(v, lo, hi):\n    mid = (lo + hi) // 2\n    if v.get(lo) > v.get(mid):\n        v.swapAt(lo, mid)\n    if v.get(lo) > v.get(hi):\n        v.swapAt(lo, hi)\n    if v.get(mid) > v.get(hi):\n        v.swapAt(mid, hi)\n    v.swapAt(mid, hi)\n    pivot = v.get(hi)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "grail_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def grail_sort(v):\n    n = v.size()\n    grail_sort_helper(v, 0, n - 1)\ndef grail_sort_helper(v, l, r):\n    if l >= r:\n        return\n    mid = (l + r) // 2\n    grail_sort_helper(v, l, mid)\n    grail_sort_helper(v, mid + 1, r)\n    grail_merge_inplace(v, l, mid, r)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "grail_sort_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def grail_sort_helper(v, l, r):\n    if l >= r:\n        return\n    mid = (l + r) // 2\n    grail_sort_helper(v, l, mid)\n    grail_sort_helper(v, mid + 1, r)\n    grail_merge_inplace(v, l, mid, r)\ndef grail_merge_inplace(v, l, mid, r):\n    i = l\n    j = mid + 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "grail_merge_inplace",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def grail_merge_inplace(v, l, mid, r):\n    i = l\n    j = mid + 1\n    while i <= mid and j <= r:\n        if v.get(i) <= v.get(j):\n            i += 1\n        else:\n            val = v.get(j)\n            k = j\n            while k > i:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "flash_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def flash_sort(v):\n    n = v.size()\n    if n <= 1:\n        return\n    min_val = v.get(0)\n    max_idx = 0\n    for i in range(1, n):\n        val = v.get(i)\n        if val < min_val:\n            min_val = val",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "wiki_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def wiki_sort(v):\n    n = v.size()\n    width = 1\n    while width < n:\n        for i in range(0, n, 2 * width):\n            mid = min(i + width - 1, n - 1)\n            r = min(i + 2 * width - 1, n - 1)\n            grail_merge_inplace(v, i, mid, r)\n        width *= 2\ndef sleep_sort(v):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "sleep_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def sleep_sort(v):\n    n = v.size()\n    if n <= 1:\n        return\n    heap = []\n    for i in range(n):\n        heap.append(v.get(i))\n    def sift_down(arr, heap_size, root):\n        while root * 2 + 1 < heap_size:\n            child = root * 2 + 1",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "american_flag_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def american_flag_sort(v):\n    n = v.size()\n    if n <= 1:\n        return\n    max_val = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        if val > max_val:\n            max_val = val\n    radix = 10",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "american_flag_sort_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def american_flag_sort_helper(v, lo, hi, exp, radix):\n    count = [0] * radix\n    for i in range(lo, hi + 1):\n        digit = (v.get(i) // exp) % radix\n        count[digit] += 1\n    offset = [0] * radix\n    offset[0] = lo\n    for i in range(1, radix):\n        offset[i] = offset[i - 1] + count[i - 1]\n    next_anchor = list(offset)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "gravity_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def gravity_sort(v):\n    n = v.size()\n    if n <= 1:\n        return\n    max_val = v.get(0)\n    for i in range(1, n):\n        val = v.get(i)\n        if val > max_val:\n            max_val = val\n    if max_val <= 0:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "slow_sort",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def slow_sort(v):\n    n = v.size()\n    slow_sort_helper(v, 0, n - 1)\ndef slow_sort_helper(v, i, j):\n    if i >= j:\n        return\n    m = (i + j) // 2\n    slow_sort_helper(v, i, m)\n    slow_sort_helper(v, m + 1, j)\n    if v.get(m) > v.get(j):",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "slow_sort_helper",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def slow_sort_helper(v, i, j):\n    if i >= j:\n        return\n    m = (i + j) // 2\n    slow_sort_helper(v, i, m)\n    slow_sort_helper(v, m + 1, j)\n    if v.get(m) > v.get(j):\n        v.swapAt(m, j)\n    slow_sort_helper(v, i, j - 1)\n# --- Algorithms Roster and Metadata ---",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "get_algorithms",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def get_algorithms():\n    return [\n        # POOL 1 — ELITE CONTENDERS\n        {\n            \"name\": \"IntroSort\", \"sort\": intro_sort, \"category\": \"Elite Contenders\",\n            \"year\": 1997, \"inventor\": \"David Musser\", \"complexity\": \"O(N log N)\",\n            \"stable\": False, \"memory\": \"O(log N)\",\n            \"description\": \"Dynamic hybrid: Quick Sort falling back to Heap Sort and Insertion Sort.\",\n            \"personality\": \"Calculated and adaptive. Ready to swap strategies to prevent worst cases.\"\n        },",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "run_sorter",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def run_sorter(algo_fn, input_arr, state, cancel_event, pause_event, paused_ns_accum, visual_delay, scale_factor=1.0):\n    if visual_delay > 0:\n        target = max(1, int(0.033 / visual_delay))\n        mask = 1\n        while mask < target:\n            mask = (mask << 1) | 1\n        mask = min(511, mask)\n    else:\n        n = len(input_arr)\n        target = max(16383, n // 8)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "make_input",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def make_input(scenario_type, n, rng):\n    a = list(range(1, n + 1))\n    if scenario_type == 0:  # Sorted\n        return a\n    elif scenario_type == 1:  # Randomized\n        rng.shuffle(a)\n        return a\n    elif scenario_type == 2:  # Reversed\n        a.reverse()\n        return a",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "adjacent_disorder",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def adjacent_disorder(a):\n    bad = 0\n    for i in range(1, len(a)):\n        if a[i - 1] > a[i]:\n            bad += 1\n    return bad\n# --- ELO and Win Probability Helper Functions ---\ndef update_elo(algoA, algoB, result, K=32):\n    rA = algoA.get('elo', 1500.0)\n    rB = algoB.get('elo', 1500.0)",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "update_elo",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def update_elo(algoA, algoB, result, K=32):\n    rA = algoA.get('elo', 1500.0)\n    rB = algoB.get('elo', 1500.0)\n    eA = 1.0 / (1.0 + 10.0 ** ((rB - rA) / 400.0))\n    eB = 1.0 / (1.0 + 10.0 ** ((rA - rB) / 400.0))\n    if result.tie:\n        sA = 0.5\n        sB = 0.5\n    elif result.winner == 0:\n        sA = 1.0",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "estimate_win_probability",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def estimate_win_probability(algoA, algoB):\n    rA = algoA.get('elo', 1500.0)\n    rB = algoB.get('elo', 1500.0)\n    # Expected ELO probability\n    prob_elo = 1.0 / (1.0 + 10.0 ** ((rB - rA) / 400.0))\n    # Historical win rate\n    import database\n    stats = database.get_historical_stats()\n    wrA = 0.5\n    if algoA['name'] in stats:",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "compute_rankings",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def compute_rankings(algos):\n    sorted_algos = sorted(algos, key=lambda x: x.get('elo', 1500.0), reverse=True)\n    return {a['name']: idx + 1 for idx, a in enumerate(sorted_algos)}\n# --- Tournament Execution Engine ---\ndef race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, visual_delay, timeout, match_score=None, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None):\n    timeout = min(240.0, timeout)\n    stA = VisualState(algoA['name'])\n    stB = VisualState(algoB['name'])\n    cancelA = threading.Event()\n    cancelB = threading.Event()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "race",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def race(algoA, algoB, input_arr, title, scenario, round_num, mode, array_size, visual_delay, timeout, match_score=None, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None):\n    timeout = min(240.0, timeout)\n    stA = VisualState(algoA['name'])\n    stB = VisualState(algoB['name'])\n    cancelA = threading.Event()\n    cancelB = threading.Event()\n    pauseA = threading.Event()\n    pauseB = threading.Event()\n    paused_nsA = Accumulator()\n    paused_nsB = Accumulator()",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "play_match",
+        "kind": 2,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "def play_match(algoA, algoB, stage_title, rng, mode, array_size, visual_delay, timeout, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, display_size=None, stage_scores=None, algo_list=None, tournament=None):\n    if mode == 'knockout':\n        scenarios = rng.sample(range(10), 5)\n    else:\n        scenarios = [0, 1, 2, 3, 4]\n    winsA = 0\n    winsB = 0\n    ties = 0\n    match_nsA = 0\n    match_nsB = 0",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "SAMPLE_COUNT",
+        "kind": 5,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "SAMPLE_COUNT = 32 # Sampled count for TUI graph\n# Scenario naming\nSCENARIO_NAMES = {\n    0: \"Sorted Array\",\n    1: \"Unsorted Array - Randomized\",\n    2: \"Unsorted Array - Reversed\",\n    3: \"Unsorted Array - one number unsorted\",\n    4: \"Unsorted Array - randomized duplicates\",\n    5: \"Random with tiny range (0-31)\",\n    6: \"Random with huge range (0-1B)\",",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "SCENARIO_NAMES",
+        "kind": 5,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "SCENARIO_NAMES = {\n    0: \"Sorted Array\",\n    1: \"Unsorted Array - Randomized\",\n    2: \"Unsorted Array - Reversed\",\n    3: \"Unsorted Array - one number unsorted\",\n    4: \"Unsorted Array - randomized duplicates\",\n    5: \"Random with tiny range (0-31)\",\n    6: \"Random with huge range (0-1B)\",\n    7: \"Organ Pipe\",\n    8: \"Sawtooth\",",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "SCENARIO_DESCRIPTIONS",
+        "kind": 5,
+        "importPath": "sorting_world_cup",
+        "description": "sorting_world_cup",
+        "peekOfCode": "SCENARIO_DESCRIPTIONS = {\n    0: \"A trap round: already sorted input punishes bad pivot choices and rewards best-case detection.\",\n    1: \"The classic benchmark: values shuffled into a clean random battlefield.\",\n    2: \"Worst-case pressure for many simple sorts: every value starts in the opposite direction.\",\n    3: \"Almost perfect order with one value displaced; adaptive algorithms get a real chance here.\",\n    4: \"Many repeated values: partitioning, stability, and counting-style approaches can shine.\",\n    5: \"Values restricted only between 0 and 31. Heavily favors counting/distribution/radix algorithms.\",\n    6: \"Massive range of values up to 1,000,000,000. Tests pivot distributions and comparison limits.\",\n    7: \"Increasing to the middle, then decreasing. Tests symmetric pattern handling.\",\n    8: \"Repeating ascending sawtooth pattern. Tests block-oriented and run-based sorts.\",",
+        "detail": "sorting_world_cup",
+        "documentation": {}
+    },
+    {
+        "label": "clean_name",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def clean_name(n):\n    if not isinstance(n, str):\n        return n\n    if n.endswith(\" (NEW)\"):\n        return n[:-6]\n    return n\n# --- ANSI TrueColor Definitions ---\nRESET = \"\\033[0m\"\nBOLD = \"\\033[1m\"\nDIM = \"\\033[2m\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "init_terminal",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"\n    sys.stdout.write(SHOW_CURSOR + \"\\033[?1049l\")\n    sys.stdout.flush()\ndef write_screen(text):\n    \"\"\"Flicker-free single-pass write to the top-left of terminal, clearing leftovers.\"\"\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "restore_terminal",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"\n    sys.stdout.write(SHOW_CURSOR + \"\\033[?1049l\")\n    sys.stdout.flush()\ndef write_screen(text):\n    \"\"\"Flicker-free single-pass write to the top-left of terminal, clearing leftovers.\"\"\"\n    sys.stdout.write(HOME + \"\\033[J\" + text)\n    sys.stdout.flush()\n@contextlib.contextmanager\ndef raw_mode():",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "write_screen",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def write_screen(text):\n    \"\"\"Flicker-free single-pass write to the top-left of terminal, clearing leftovers.\"\"\"\n    sys.stdout.write(HOME + \"\\033[J\" + text)\n    sys.stdout.flush()\n@contextlib.contextmanager\ndef raw_mode():\n    \"\"\"Temporarily enables raw terminal input mode for non-blocking key reads.\"\"\"\n    fd = sys.stdin.fileno()\n    if not os.isatty(fd):\n        yield",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "raw_mode",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def raw_mode():\n    \"\"\"Temporarily enables raw terminal input mode for non-blocking key reads.\"\"\"\n    fd = sys.stdin.fileno()\n    if not os.isatty(fd):\n        yield\n        return\n    old_settings = termios.tcgetattr(fd)\n    try:\n        tty.setraw(fd)\n        yield",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "read_key",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def read_key(block=True):\n    \"\"\"Reads a single key or key sequence. Blocks by default, or returns None if block=False and no key is pressed.\"\"\"\n    fd = sys.stdin.fileno()\n    if not os.isatty(fd):\n        # Fallback to simple input if not a TTY\n        line = sys.stdin.readline()\n        return line.strip() if line else None\n    timeout = None if block else 0.05\n    with raw_mode():\n        r, _, _ = select.select([sys.stdin], [], [], timeout)",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "clear_screen",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def clear_screen():\n    write_screen(\"\")\ndef get_term_size():\n    try:\n        columns, lines = os.get_terminal_size()\n        return columns, lines\n    except OSError:\n        return 80, 24\n# --- Block Graph Drawing Helpers ---\nBLOCKS = [\" \", \"▂\", \"▃\", \"▄\", \"▅\", \"▆\", \"▇\", \"█\"]",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "get_term_size",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def get_term_size():\n    try:\n        columns, lines = os.get_terminal_size()\n        return columns, lines\n    except OSError:\n        return 80, 24\n# --- Block Graph Drawing Helpers ---\nBLOCKS = [\" \", \"▂\", \"▃\", \"▄\", \"▅\", \"▆\", \"▇\", \"█\"]\ndef get_block_char(val, min_v, max_v):\n    if max_v == min_v:",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "get_block_char",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def get_block_char(val, min_v, max_v):\n    if max_v == min_v:\n        return BLOCKS[-1]\n    norm = (val - min_v) / (max_v - min_v)\n    idx = math.floor(norm * (len(BLOCKS) - 1))\n    idx = max(0, min(len(BLOCKS) - 1, idx))\n    return BLOCKS[idx]\ndef make_bar_graph(values, width=32):\n    \"\"\"Generates a list of single-character blocks representing array values.\"\"\"\n    if not values:",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "make_bar_graph",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def make_bar_graph(values, width=32):\n    \"\"\"Generates a list of single-character blocks representing array values.\"\"\"\n    if not values:\n        return \" \" * width\n    # Resample values to fit the exact width\n    n = len(values)\n    resampled = []\n    for i in range(width):\n        idx = min(n - 1, (i * (n - 1)) // max(1, width - 1))\n        resampled.append(values[idx])",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "make_sortedness_bar",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def make_sortedness_bar(percentage, width=20):\n    \"\"\"Renders a color-coded percentage bar.\"\"\"\n    filled = int((percentage / 100.0) * width)\n    filled = max(0, min(width, filled))\n    empty = width - filled\n    # Select color based on progress\n    if percentage < 30:\n        color = RED\n    elif percentage < 70:\n        color = AMBER",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "draw_trophy_header",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def draw_trophy_header(subtitle=\"\"):\n    # FIFA World Cup trophies on left and right, with central tournament label box\n    left_trophy = [\n        \"       .-----.     \",\n        \"     .'   __  '.   \",\n        \"    /   .'  '.  \\\\  \",\n        \"   |   |      |  | \",\n        \"    \\\\   '.__.'  /  \",\n        \"     '.       .'   \",\n        \"       )  _  (     \",",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "draw_simple_header",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def draw_simple_header(subtitle=\"\"):\n    if not subtitle:\n        return \"\"\n    width = 76\n    title_str = f\" {BOLD}{CYAN}{subtitle.upper()}{RESET} \"\n    raw_len = len(subtitle) + 2\n    pad_left = (width - raw_len) // 2\n    pad_right = width - raw_len - pad_left\n    return f\"\\n{GOLD}{'═' * pad_left}{RESET}{title_str}{GOLD}{'═' * pad_right}{RESET}\\n\"\ndef draw_box(title, content_lines, width=76, color=BLUE):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "draw_box",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def draw_box(title, content_lines, width=76, color=BLUE):\n    \"\"\"Draws a rounded Unicode box around lines of text.\"\"\"\n    box_lines = []\n    # Title formatting\n    title_str = f\" {title} \" if title else \"\"\n    rem = width - len(title_str) - 2\n    top = f\"{color}╭{title_str.center(width - 2, '─')}{color}╮{RESET}\"\n    box_lines.append(top)\n    for line in content_lines:\n        # Strip ANSI codes to calculate actual length",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "ansi_strip",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def ansi_strip(text):\n    \"\"\"Removes ANSI control sequences from a string for text length calculations.\"\"\"\n    import re\n    return re.sub(r'\\033\\[[0-9;]*[a-zA-Z]', '', text)\ndef render_resume_prompt():\n    \"\"\"Renders a beautiful prompt asking the user if they want to resume a saved tournament.\"\"\"\n    header = draw_trophy_header(\"RESTORE SESSION\")\n    content = [\n        \" A saved tournament state has been detected in the database.\",\n        \" You can resume the saved session or start a new tournament.\",",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_resume_prompt",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_resume_prompt():\n    \"\"\"Renders a beautiful prompt asking the user if they want to resume a saved tournament.\"\"\"\n    header = draw_trophy_header(\"RESTORE SESSION\")\n    content = [\n        \" A saved tournament state has been detected in the database.\",\n        \" You can resume the saved session or start a new tournament.\",\n        \"\",\n        f\"  {CYAN}▶ Resume Saved Tournament? (Y/N){RESET}\",\n        \"\",\n        f\"  {FG_MUTED}Press Y to Resume / Press N to Start Fresh and Delete Save{RESET}\",",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_main_menu",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_main_menu(options, selected_idx, array_size, delay, timeout, year=2026, active_cup=\"World Cup\"):\n    \"\"\"Renders the main menu dashboard with options and settings information.\"\"\"\n    header = draw_trophy_header(\"MAIN MENU\")\n    welcome_text = f\"  Welcome to the {BOLD}{GOLD}Sorting Algorithm {active_cup} {year}{RESET}!\"\n    if active_cup == \"World Cup\":\n        desc_text = \"  Run 32 sorting algorithms in group stage round-robins and knockout brackets.\"\n    else:\n        desc_text = \"  Run 16 sorting algorithms in group stages, quarterfinals, and last chance playoffs.\"\n    content = [\n        welcome_text,",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_settings_menu",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_settings_menu(selected_idx, current_size, current_ko_size, current_final_size, current_delay, group_timeout, ko_timeout, final_timeout, autoplay):\n    \"\"\"Renders an interactive settings modifier screen.\"\"\"\n    header = draw_trophy_header(\"SETTINGS\")\n    opts = [\n        (\"Group Array Size\", f\"{current_size:,} elements\"),\n        (\"Knockouts Array Size\", f\"{current_ko_size:,} elements\"),\n        (\"Final Array Size\", f\"{current_final_size:,} elements\"),\n        (\"Simulation Delay\", f\"{current_delay * 1000:.4f} ms\" if current_delay > 0 else \"0 ms\"),\n        (\"Group Stage Timeout\", f\"{group_timeout} seconds\"),\n        (\"Knockout Stage Timeout\", f\"{ko_timeout} seconds\"),",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "reconstruct_wc_bracket",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def reconstruct_wc_bracket(entrants, results, algo_names):\n    def get_name(idx):\n        if idx is None:\n            return \"TBD\"\n        if isinstance(idx, int) and idx >= 0 and idx < len(algo_names):\n            return algo_names[idx]\n        return str(idx)\n    matches = [{\"teamA\": \"TBD\", \"teamB\": \"TBD\", \"winsA\": None, \"winsB\": None, \"winner\": None} for _ in range(15)]\n    r16_res = results.get(\"ROUND OF 16\", []) if results else []\n    for i in range(8):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "reconstruct_cc_bracket",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def reconstruct_cc_bracket(entrants, cc_lcp, results, algo_names):\n    def get_name(idx):\n        if idx is None:\n            return \"TBD\"\n        if isinstance(idx, int) and idx >= 0 and idx < len(algo_names):\n            return algo_names[idx]\n        return str(idx)\n    matches = [{\"teamA\": \"TBD\", \"teamB\": \"TBD\", \"winsA\": None, \"winsB\": None, \"winner\": None, \"loser\": None} for _ in range(10)]\n    qf_res = results.get(\"CHALLENGER QF\", []) if results else []\n    for i in range(4):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_bracket_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_bracket_view(bracket, current_stage, algo_names, page=0):\n    \"\"\"Draws a gorgeous ASCII representation of the knockout brackets.\"\"\"\n    header = draw_trophy_header(\"WORLD CUP BRACKET\")\n    if isinstance(bracket, dict):\n        entrants = bracket.get(\"wc\", [])\n        results = bracket.get(\"wc_results\", {})\n    else:\n        if isinstance(bracket, list) and len(bracket) == 16:\n            entrants = bracket\n            results = {}",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_challenger_bracket_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_challenger_bracket_view(cc_bracket_data, current_stage, algo_names, page=0):\n    \"\"\"Draws a gorgeous ASCII representation of Challenger Cup and LCP brackets.\"\"\"\n    header = draw_trophy_header(\"CHALLENGER CUP BRACKET\")\n    if isinstance(cc_bracket_data, dict):\n        entrants = cc_bracket_data.get(\"cc_main\", [])\n        cc_lcp = cc_bracket_data.get(\"cc_lcp\", [])\n        results = cc_bracket_data.get(\"cc_results\", {})\n    else:\n        # Check if list format\n        if isinstance(cc_bracket_data, list):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_standings_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_standings_view(standings, algo_names, page=0, num_groups=8):\n    \"\"\"Renders the points tables for all groups, split into two pages if 8 groups.\"\"\"\n    header = draw_trophy_header(\"GROUP STANDINGS\")\n    if num_groups == 4:\n        groups_to_render = range(0, 4)\n        nav_tip = f\"Press {CYAN}Enter{RESET} to exit to main menu.\"\n    else:\n        groups_to_render = range(0, 4) if page == 0 else range(4, 8)\n        nav_tip = f\"Showing Groups {chr(ord('A') + groups_to_render[0])}-{chr(ord('A') + groups_to_render[-1])}  |  Use {CYAN}← / → Arrows{RESET} to switch pages. Press {CYAN}Enter{RESET} to exit.\"\n    content = []",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_group_draw",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_group_draw(groups, algo_names, highlighted_group=-1, opening_pot=None, num_groups=8):\n    \"\"\"Renders the lottery draw board where algorithms are assigned to groups.\"\"\"\n    subtitle = \"GROUP DRAW LOTTERY\"\n    if opening_pot is not None:\n        subtitle += f\" - POT {opening_pot + 1}\"\n    header = draw_trophy_header(subtitle)\n    # We display groups in pairs\n    pairs = [(0, 1), (2, 3)]\n    if num_groups == 8:\n        pairs += [(4, 5), (6, 7)]",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "format_ns",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def format_ns(ns):\n    if ns is None:\n        return \"N/A\"\n    return f\"{ns / 1_000_000_000:.6f}s\"\ndef draw_live_bracket_box(bracket, current_match_idx, stage_winners, algo_names, stage_title, current_winner_idx=None, stage_scores=None):\n    if not bracket or current_match_idx is None:\n        return \"\"\n    lines = []\n    num_matches = len(bracket) // 2\n    for m in range(num_matches):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "draw_live_bracket_box",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def draw_live_bracket_box(bracket, current_match_idx, stage_winners, algo_names, stage_title, current_winner_idx=None, stage_scores=None):\n    if not bracket or current_match_idx is None:\n        return \"\"\n    lines = []\n    num_matches = len(bracket) // 2\n    for m in range(num_matches):\n        a_idx = bracket[2 * m]\n        b_idx = bracket[2 * m + 1]\n        a_name = algo_names[a_idx] if (algo_names and a_idx < len(algo_names)) else f\"Algo {a_idx}\"\n        b_name = algo_names[b_idx] if (algo_names and b_idx < len(algo_names)) else f\"Algo {b_idx}\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_live_race",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_live_race(stA, stB, scenario_name, scenario_desc, round_num, array_size, match_score=None, group_id=None, standings=None, algo_names=None, stage_title=None, bracket=None, current_match_idx=None, stage_winners=None, stage_scores=None):\n    \"\"\"Renders a gorgeous real-time split-screen visual dashboard of a live race.\"\"\"\n    # Title header\n    header_lines = [\n        f\" {GOLD}SORTING WORLD CUP - LIVE DUEL{RESET} \".center(74, \"=\"),\n        f\"Round {BOLD}{round_num} / 5{RESET}  |  Scenario: {CYAN}{scenario_name}{RESET}\",\n        f\"Array Size: {AMBER}{array_size:,}{RESET} values\",\n        f\"{FG_MUTED}{scenario_desc[:74]}{RESET}\",\n        \"─\" * 76,\n        \"\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "draw_round_result",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def draw_round_result(nameA, nameB, rr, winsA, winsB, ties, stage_title, group_id=None, standings=None, algo_names=None, bracket=None, current_match_idx=None, stage_winners=None, stage_scores=None):\n    \"\"\"Draws a beautiful block summarizing the match outcome, including group standings if available.\"\"\"\n    header = draw_simple_header(\"MATCH COMPLETED\")\n    winner_name = \"TIE MATCH\" if winsA == winsB else (nameA if winsA > winsB else nameB)\n    status_color = AMBER if winsA == winsB else GREEN\n    # Render with same visual layout and size as dueling stats cards\n    card = []\n    card.append(f\" {CYAN}{BOLD}{nameA.upper()[:28]:<32}{RESET}   │   {VIOLET}{BOLD}{nameB.upper()[:28]:<32}{RESET}\")\n    card.append(f\" Outcome: {status_color}{winner_name.upper()[:23]:<23}{RESET}   │   Outcome: {status_color}{winner_name.upper()[:23]:<23}{RESET}\")\n    card.append(f\" ─\" * 17 + \"   │  \" + \" ─\" * 17)",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_pre_match_intro",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_pre_match_intro(algoA, algoB, rankA, rankB, probA, probB, stage_title):\n    \"\"\"Renders a beautiful comparison card of the competitors before they duel.\"\"\"\n    header = draw_simple_header(f\"PRE-MATCH SHOWDOWN — {stage_title.upper()}\")\n    card = [\n        f\" {CYAN}{BOLD}{algoA['name'].upper()[:28]:<32}{RESET}   │   {VIOLET}{BOLD}{algoB['name'].upper()[:28]:<32}{RESET}\",\n        f\" ELO Rating: {algoA.get('elo', 1500.0):<19.1f}   │   ELO Rating: {algoB.get('elo', 1500.0):<19.1f}\",\n        f\" World Rank: #{rankA:<19}   │   World Rank: #{rankB:<19}\",\n        f\" ─\" * 17 + \"   │  \" + \" ─\" * 17,\n        f\" Category:   {algoA.get('category', 'N/A'):<17}   │   Category:   {algoB.get('category', 'N/A'):<17}\",\n        f\" Year:       {algoA.get('year', 'N/A'):<17}   │   Year:       {algoB.get('year', 'N/A'):<17}\",",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_awards_screen",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_awards_screen(awards):\n    \"\"\"Renders the Academy-style tournament awards screen.\"\"\"\n    header = draw_trophy_header(\"TOURNAMENT AWARDS\")\n    content = [\n        f\"  {GOLD}GOLDEN TROPHY - Overall Champion:{RESET}\",\n        f\"    🏆 {BOLD}{CYAN}{awards['champion']}{RESET}\",\n        \"\",\n        f\"  {AMBER}GOLDEN STOPWATCH - Fastest Round Finish:{RESET}\",\n        f\"    ⏱ {BOLD}{GREEN}{awards['fastest_time']}{RESET}\",\n        \"\",",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_hall_of_fame_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_hall_of_fame_view(hof):\n    \"\"\"Renders the Hall of Fame champion scroll.\"\"\"\n    header = draw_trophy_header(\"HALL OF FAME\")\n    content = [\n        \"Persisted champions across all tournaments.\",\n        f\"Press {CYAN}Enter{RESET} to return to main menu.\",\n        \"\"\n    ]\n    if not hof:\n        content.append(f\"  {FG_MUTED}No tournaments have completed yet. Be the first to win!{RESET}\")",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_scenario_strengths_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_scenario_strengths_view(perf, algo_names, page=0):\n    \"\"\"Renders the scenario performance heatmap split in two pages.\"\"\"\n    header = draw_trophy_header(\"SCENARIO PERFORMANCE HEATMAP\")\n    content = [\n        f\"Average sort time in milliseconds.  |  Use {CYAN}← / → Arrows{RESET} to switch pages.\",\n        f\"Press {CYAN}Enter{RESET} to return to main menu.\",\n        \"\"\n    ]\n    col_header = f\"  {FG_MUTED}{'Algorithm':<22} {'Sorted':>9} {'Random':>9} {'Reversed':>9} {'Nearly S':>9} {'Dupl.':>9}{RESET}\"\n    content.append(col_header)",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_exhibition_menu",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_exhibition_menu(selected_idx):\n    \"\"\"Renders the exhibition selection menu.\"\"\"\n    header = draw_trophy_header(\"EXHIBITION MATCHES\")\n    opts = [\n        \"1. Quick Sort vs Merge Sort (The Classic Rivalry)\",\n        \"2. Timsort vs IntroSort (The Modern Elite Battle)\",\n        \"3. Bogo Sort vs Stooge Sort (The Battle of the Inefficient)\",\n        \"4. Fastest 8 Algorithms Battle Royale (The Elite 8 Showdown)\",\n        \"5. Back to Main Menu\"\n    ]",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_exhibition_battle_royale",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_exhibition_battle_royale(states, scenario_name, elapsed_ms, array_size):\n    \"\"\"Renders the stacked 8-way concurrent live progress of the Battle Royale.\"\"\"\n    header = draw_simple_header(\"LEGENDARY BATTLE ROYALE (8 ALGORITHMS)\")\n    content = [\n        f\"Scenario: {CYAN}{scenario_name}{RESET} | Size: {AMBER}{array_size:,}{RESET} values | Time: {elapsed_ms/1000:.3f}s\",\n        \"─\" * 70\n    ]\n    for st in states:\n        with st.lock:\n            name = st.name",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_fixtures_view",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_fixtures_view(fixtures, algo_names, page=0):\n    \"\"\"Renders the scheduled matches list dynamically split across pages.\"\"\"\n    header = draw_trophy_header(\"SCHEDULED FIXTURES\")\n    num_groups = max([f['group'] for f in fixtures]) + 1 if fixtures else 8\n    if num_groups <= 4:\n        # 1 page total for Challenger Cup\n        groups_to_render = range(0, num_groups)\n        content_header = f\"Showing Groups A-{chr(ord('A') + num_groups - 1)}  |  Press {CYAN}Enter{RESET} to exit.\"\n    else:\n        # 2 pages for World Cup",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_rating_board",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_rating_board(ratings_list, page=0):\n    \"\"\"Renders the ELO rating board, paginated (20 algorithms per page).\"\"\"\n    header = draw_trophy_header(\"WORLD RATING BOARD\")\n    content = []\n    content.append(f\"Rankings by ELO Rating  |  Page {page+1}/2  |  Use {CYAN}← / → Arrows{RESET} to switch pages.\")\n    content.append(f\"Press {CYAN}Enter{RESET} to exit to main menu.\")\n    content.append(\"\")\n    col_header = f\"  {FG_MUTED}{'Rank':<5} {'Algorithm':<20} {'ELO':>8} {'Played':>7} {'Wins':>6} {'Losses':>7} {'Avg Time':>11}{RESET}\"\n    content.append(col_header)\n    content.append(\"  \" + \"─\" * 68)",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_consolidated_standings",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_consolidated_standings(current_stands, all_time_stands, page=0):\n    \"\"\"Renders a consolidated standings table for all 40 algorithms (20 per page).\"\"\"\n    is_all_time = page >= 2\n    title = \"ALL-TIME CONSOLIDATED POINTS TABLE\" if is_all_time else \"CURRENT SEASON CONSOLIDATED TABLE\"\n    header = draw_trophy_header(title)\n    content = []\n    content.append(f\"Rankings  |  Page {page+1}/4  |  Use {CYAN}← / → Arrows{RESET} to switch pages.\")\n    content.append(f\"Press {CYAN}Enter{RESET} to exit to main menu.\")\n    content.append(\"\")\n    col_header = f\"  {FG_MUTED}{'Rank':<5} {'Algorithm':<20} {'P':>3} {'Pts':>4} {'W':>3} {'D':>3} {'L':>3} {'Diff':>5} {'AvgTime':>10}{RESET}\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_archives_years_list",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_archives_years_list(years, selected_idx):\n    \"\"\"Renders the list of archived tournament seasons for selection.\"\"\"\n    header = draw_trophy_header(\"TOURNAMENT HISTORY ARCHIVES\")\n    content = []\n    content.append(\"Browse completed tournament records from past years.\")\n    content.append(f\"Use {CYAN}Up/Down Arrows{RESET} to select, and press {CYAN}Enter{RESET} to open.\")\n    content.append(\"\")\n    if not years:\n        content.append(f\"  {RED}No archived seasons found.{RESET}\")\n        content.append(\"  Archives are created automatically when a tournament season completes.\")",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "render_archive_details_menu",
+        "kind": 2,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "def render_archive_details_menu(year, champion, selected_idx):\n    \"\"\"Renders the option menu for a selected archived year.\"\"\"\n    header = draw_trophy_header(f\"ARCHIVE - YEAR {year}\")\n    opts = [\n        \"1. View Group Stage Points Table\",\n        \"2. View Knockout Bracket\",\n        \"3. Back to Years Selection\"\n    ]\n    content = []\n    content.append(f\"Archived details for Season Year {year}.\")",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "RESET",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "RESET = \"\\033[0m\"\nBOLD = \"\\033[1m\"\nDIM = \"\\033[2m\"\nITALIC = \"\\033[3m\"\nUNDERLINE = \"\\033[4m\"\n# Premium palette (Slate-900 theme with cyan, violet, green accents)\nBG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BOLD",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BOLD = \"\\033[1m\"\nDIM = \"\\033[2m\"\nITALIC = \"\\033[3m\"\nUNDERLINE = \"\\033[4m\"\n# Premium palette (Slate-900 theme with cyan, violet, green accents)\nBG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "DIM",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "DIM = \"\\033[2m\"\nITALIC = \"\\033[3m\"\nUNDERLINE = \"\\033[4m\"\n# Premium palette (Slate-900 theme with cyan, violet, green accents)\nBG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "ITALIC",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "ITALIC = \"\\033[3m\"\nUNDERLINE = \"\\033[4m\"\n# Premium palette (Slate-900 theme with cyan, violet, green accents)\nBG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "UNDERLINE",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "UNDERLINE = \"\\033[4m\"\n# Premium palette (Slate-900 theme with cyan, violet, green accents)\nBG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BG",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BG = \"\\033[48;2;15;23;42m\"          # Slate 900\nBG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BG_CARD",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BG_CARD = \"\\033[48;2;30;41;59m\"     # Slate 800\nBG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BG_HOT",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BG_HOT = \"\\033[48;2;51;65;85m\"       # Slate 700\nFG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "FG",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "FG = \"\\033[38;2;248;250;252m\"       # Slate 50\nFG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "FG_MUTED",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "FG_MUTED = \"\\033[38;2;148;163;184m\" # Slate 400\nFG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "FG_DARK",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "FG_DARK = \"\\033[38;2;71;85;105m\"    # Slate 600\nCYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "CYAN",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "CYAN = \"\\033[38;2;34;211;238m\"      # Cyan 400\nBLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BLUE",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BLUE = \"\\033[38;2;96;165;250m\"      # Blue 400\nVIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "VIOLET",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "VIOLET = \"\\033[38;2;192;132;252m\"   # Violet 400\nGREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "GREEN",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "GREEN = \"\\033[38;2;52;211;153m\"     # Emerald 400\nRED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "RED",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "RED = \"\\033[38;2;248;113;113m\"      # Red 400\nAMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "AMBER",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "AMBER = \"\\033[38;2;251;191;36m\"     # Amber 400\nGOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "GOLD",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "GOLD = \"\\033[38;2;234;179;8m\"       # Yellow 500\nHIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "HIDE_CURSOR",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "HIDE_CURSOR = \"\\033[?25l\"\nSHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "SHOW_CURSOR",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "SHOW_CURSOR = \"\\033[?25h\"\nCLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"\n    sys.stdout.write(SHOW_CURSOR + \"\\033[?1049l\")",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "CLEAR",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "CLEAR = \"\\033[2J\"\nHOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"\n    sys.stdout.write(SHOW_CURSOR + \"\\033[?1049l\")\n    sys.stdout.flush()",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "HOME",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "HOME = \"\\033[H\"\ndef init_terminal():\n    \"\"\"Switches to alternate screen buffer and hides cursor to prevent scrolling/trails.\"\"\"\n    sys.stdout.write(\"\\033[?1049h\" + HIDE_CURSOR)\n    sys.stdout.flush()\ndef restore_terminal():\n    \"\"\"Restores main screen buffer and restores cursor.\"\"\"\n    sys.stdout.write(SHOW_CURSOR + \"\\033[?1049l\")\n    sys.stdout.flush()\ndef write_screen(text):",
+        "detail": "terminal_ui",
+        "documentation": {}
+    },
+    {
+        "label": "BLOCKS",
+        "kind": 5,
+        "importPath": "terminal_ui",
+        "description": "terminal_ui",
+        "peekOfCode": "BLOCKS = [\" \", \"▂\", \"▃\", \"▄\", \"▅\", \"▆\", \"▇\", \"█\"]\ndef get_block_char(val, min_v, max_v):\n    if max_v == min_v:\n        return BLOCKS[-1]\n    norm = (val - min_v) / (max_v - min_v)\n    idx = math.floor(norm * (len(BLOCKS) - 1))\n    idx = max(0, min(len(BLOCKS) - 1, idx))\n    return BLOCKS[idx]\ndef make_bar_graph(values, width=32):\n    \"\"\"Generates a list of single-character blocks representing array values.\"\"\"",
+        "detail": "terminal_ui",
+        "documentation": {}
+    }
+]

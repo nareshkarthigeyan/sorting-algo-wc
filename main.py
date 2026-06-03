@@ -8,8 +8,8 @@ import sorting_world_cup
 import database
 
 def run_self_test():
-    print("Running self-test for 32 Python sorting algorithms...")
     algos = sorting_world_cup.get_algorithms()
+    print(f"Running self-test for {len(algos)} Python sorting algorithms...")
     scenarios = [0, 1, 2, 3, 4]
     
     rng = random.Random(20260531)
@@ -78,7 +78,7 @@ def run_self_test():
             print(f"FAIL: {algo['name']} on 100,000 sorted values")
             
     if failures == 0:
-        print("Self-test passed: 32 algorithms x 5 scenarios + 100,000-item quicksort smoke tests.")
+        print(f"Self-test passed: {len(algos)} algorithms x 5 scenarios + 100,000-item quicksort smoke tests.")
         return 0
     else:
         print(f"Self-test failed: {failures} case(s).")
@@ -327,10 +327,10 @@ def run_exhibitions(algos, settings, rng):
             else:
                 run_exhibition_match(selected_idx, algos, settings, rng)
 
-def run_scenario_strengths(algos):
+def run_scenario_strengths(algos, tournament):
     """Displays the scenario performance heatmap rankings."""
     perf = database.get_scenario_performance()
-    algo_names = [a['name'] for a in algos]
+    algo_names = tournament.get_decorated_algo_names()
     
     page = 0
     while True:
@@ -435,7 +435,9 @@ def main():
                 selected_menu_idx,
                 settings['array_size'],
                 settings['visual_delay'],
-                settings['group_timeout']
+                settings['group_timeout'],
+                year=tournament.year,
+                active_cup=tournament.active_cup
             )
             
             key = terminal_ui.read_key(block=True)
@@ -445,56 +447,125 @@ def main():
                 selected_menu_idx = (selected_menu_idx + 1) % len(menu_options)
             elif key == 'enter':
                 if selected_menu_idx == 0:  # Group Draw
-                    tournament.draw_groups(animated=True)
+                    if tournament.active_cup == "World Cup":
+                        tournament.draw_groups(animated=True)
+                    else:
+                        tournament.draw_challenger_groups(animated=True)
                     database.save_tournament(tournament)
                     print("\n  Group Draw complete! Press Enter to return to main menu...")
                     while True:
                         if terminal_ui.read_key(block=True) == 'enter':
                             break
-                elif selected_menu_idx == 1:  # Scheduling of Matches (Paginated, 2 pages)
+                elif selected_menu_idx == 1:  # Scheduling of Matches (Paginated)
                     page = 0
+                    num_pages = 2 if tournament.active_cup == "World Cup" else 1
                     while True:
-                        terminal_ui.render_fixtures_view(tournament.fixtures, [a['name'] for a in algos], page=page)
+                        terminal_ui.render_fixtures_view(tournament.fixtures, tournament.get_decorated_algo_names(), page=page)
                         k = terminal_ui.read_key(block=True)
                         if k == 'enter':
                             break
-                        elif k == 'left' or k == 'h':
-                            page = 0
-                        elif k == 'right' or k == 'l':
-                            page = 1
+                        elif num_pages > 1:
+                            if k == 'left' or k == 'h':
+                                page = 0
+                            elif k == 'right' or k == 'l':
+                                page = 1
                 elif selected_menu_idx == 2:  # Play Tournament
-                    if tournament.current_stage == "Group Stage":
+                    if tournament.current_stage in ["Group Stage", "Challenger Group Stage"]:
                         tournament.play_group_stage()
                     tournament.play_knockouts()
                 elif selected_menu_idx == 3:  # Points Table
                     page = 0
+                    num_groups = 4 if tournament.active_cup == "Challenger Cup" else 8
                     while True:
-                        terminal_ui.render_standings_view(tournament.standings, [a['name'] for a in algos], page=page)
+                        terminal_ui.render_standings_view(tournament.standings, tournament.get_decorated_algo_names(), page=page, num_groups=num_groups)
                         k = terminal_ui.read_key(block=True)
                         if k == 'enter':
                             break
-                        elif k == 'left' or k == 'h':
-                            page = 0
-                        elif k == 'right' or k == 'l':
-                            page = 1
+                        elif num_groups > 4:
+                            if k == 'left' or k == 'h':
+                                page = 0
+                            elif k == 'right' or k == 'l':
+                                page = 1
                 elif selected_menu_idx == 4:  # Bracket View
-                    bracket = []
-                    if tournament.current_bracket:
-                        bracket = tournament.current_bracket
-                    elif any(s['played'] > 0 for s in tournament.standings):
-                        try:
-                            bracket = tournament.qualified()
-                        except Exception:
-                            pass
-                    stage_title = tournament.current_stage if tournament.current_stage != "Group Stage" else "ROUND OF 16"
-                    terminal_ui.render_bracket_view(bracket, stage_title if bracket else "NOT AVAILABLE", [a['name'] for a in algos])
-                    while True:
-                        if terminal_ui.read_key(block=True) == 'enter':
-                            break
+                    if tournament.active_cup == "World Cup":
+                        entrants = list(tournament.bracket_entrants)
+                        if not entrants and tournament.current_bracket:
+                            entrants = list(tournament.current_bracket)
+                        if not entrants and any(s['played'] > 0 for s in tournament.standings):
+                            try:
+                                entrants = tournament.qualified()
+                            except Exception:
+                                pass
+                        
+                        bracket_data = {
+                            "wc": entrants,
+                            "wc_results": getattr(tournament, "knockout_results", {})
+                        }
+                        stage_title = tournament.current_stage if tournament.current_stage != "Group Stage" else "ROUND OF 16"
+                        
+                        if "ROUND" in stage_title:
+                            page = 0
+                        elif "QUARTER" in stage_title:
+                            page = 1
+                        else:
+                            page = 2
+                            
+                        while True:
+                            terminal_ui.render_bracket_view(bracket_data, stage_title if entrants else "NOT AVAILABLE", tournament.get_decorated_algo_names(), page=page)
+                            k = terminal_ui.read_key(block=True)
+                            if k == 'enter':
+                                break
+                            elif k == 'left' or k == 'h':
+                                page = max(0, page - 1)
+                            elif k == 'right' or k == 'l':
+                                page = min(2, page + 1)
+                    else:
+                        entrants = list(tournament.cc_bracket_entrants)
+                        if not entrants and tournament.cc_current_bracket:
+                            entrants = list(tournament.cc_current_bracket)
+                        if not entrants and any(s['played'] > 0 for s in tournament.standings):
+                            try:
+                                entrants = tournament.challenger_qualified()
+                            except Exception:
+                                pass
+                        
+                        bracket_data = {
+                            "cc_main": entrants,
+                            "cc_lcp": getattr(tournament, "cc_lcp_bracket", []),
+                            "cc_results": getattr(tournament, "cc_knockout_results", {})
+                        }
+                        stage_title = tournament.current_stage if tournament.current_stage != "Challenger Group Stage" else "CHALLENGER QF"
+                        
+                        if "QF" in stage_title:
+                            page = 0
+                        elif "SF" in stage_title or "SEMI" in stage_title:
+                            page = 1 if "LCP" not in stage_title else 2
+                        else:
+                            page = 1 if "CHALLENGER" in stage_title else 2
+                            
+                        while True:
+                            terminal_ui.render_challenger_bracket_view(bracket_data, stage_title if entrants else "NOT AVAILABLE", tournament.get_decorated_algo_names(), page=page)
+                            k = terminal_ui.read_key(block=True)
+                            if k == 'enter':
+                                break
+                            elif k == 'left' or k == 'h':
+                                page = max(0, page - 1)
+                            elif k == 'right' or k == 'l':
+                                page = min(2, page + 1)
                 elif selected_menu_idx == 5:  # Consolidated Points Tables
                     # Build current season consolidated list combining group + knockout stats
                     current_list = []
                     for s in tournament.standings:
+                        name = algos[s['algo']]['name']
+                        
+                        # Filter by active cup division membership
+                        if tournament.active_cup == "World Cup":
+                            if name not in tournament.wc_teams:
+                                continue
+                        else:
+                            if name not in tournament.challenger_teams and name not in tournament.relegated_teams:
+                                continue
+                                
                         played = s['played'] + s.get('ko_played', 0)
                         points = s['points'] + s.get('ko_points', 0)
                         wins = s['matchWins'] + s.get('ko_matchWins', 0)
@@ -503,8 +574,15 @@ def main():
                         r_wins = s['roundWins'] + s.get('ko_roundWins', 0)
                         r_losses = s['roundLosses'] + s.get('ko_roundLosses', 0)
                         ns = s['ns'] + s.get('ko_ns', 0)
+                        
+                        # Add decoration
+                        if algos[s['algo']].get('debut_year') == tournament.year:
+                            display_name = f"{name} (NEW)"
+                        else:
+                            display_name = name
+                            
                         current_list.append({
-                            'name': algos[s['algo']]['name'],
+                            'name': display_name,
                             'played': played,
                             'points': points,
                             'matchWins': wins,
@@ -532,8 +610,14 @@ def main():
                             'round_wins': 0, 'round_losses': 0, 'total_sorted_time_ns': 0,
                             'total_sorted_rounds': 0
                         })
+                        
+                        if a.get('debut_year') == tournament.year:
+                            display_name = f"{name} (NEW)"
+                        else:
+                            display_name = name
+                            
                         all_time_list.append({
-                            'name': name,
+                            'name': display_name,
                             'played': stats.get('played', 0),
                             'points': stats.get('points', 0),
                             'matchWins': stats.get('won', 0),
@@ -573,8 +657,14 @@ def main():
                             'played': 0, 'won': 0, 'lost': 0, 'total_sorted_time_ns': 0,
                             'total_sorted_rounds': 0
                         })
+                        
+                        if a.get('debut_year') == tournament.year:
+                            display_name = f"{name} (NEW)"
+                        else:
+                            display_name = name
+                            
                         ratings_list.append({
-                            'name': name,
+                            'name': display_name,
                             'elo': ratings.get(name, 1500.0),
                             'played': stats.get('played', 0),
                             'won': stats.get('won', 0),
@@ -619,37 +709,110 @@ def main():
                                 selected_year, champ = seasons[selected_year_idx]
                                 archive_details = database.get_archived_season_details(selected_year)
                                 if archive_details:
+                                    is_double_cup = isinstance(archive_details['standings'], dict) and 'wc' in archive_details['standings']
                                     detail_idx = 0
+                                    if is_double_cup:
+                                        opts = [
+                                            "1. View World Cup Standings",
+                                            "2. View World Cup Bracket",
+                                            "3. View Challenger Cup Standings",
+                                            "4. View Challenger Cup Bracket",
+                                            "5. Back to Years Selection"
+                                        ]
+                                        opts_len = 5
+                                    else:
+                                        opts = [
+                                            "1. View Group Stage Points Table",
+                                            "2. View Knockout Bracket",
+                                            "3. Back to Years Selection"
+                                        ]
+                                        opts_len = 3
+                                        
                                     while True:
-                                        terminal_ui.render_archive_details_menu(selected_year, champ, detail_idx)
+                                        terminal_ui.render_archive_details_menu(selected_year, champ, detail_idx, opts=opts)
                                         det_k = terminal_ui.read_key(block=True)
                                         if det_k == 'up' or det_k == 'k':
-                                            detail_idx = (detail_idx - 1) % 3
+                                            detail_idx = (detail_idx - 1) % opts_len
                                         elif det_k == 'down' or det_k == 'j':
-                                            detail_idx = (detail_idx + 1) % 3
+                                            detail_idx = (detail_idx + 1) % opts_len
                                         elif det_k == 'enter':
-                                            if detail_idx == 0:
-                                                page = 0
-                                                while True:
-                                                    terminal_ui.render_standings_view(archive_details['standings'], [a['name'] for a in algos], page=page)
-                                                    st_k = terminal_ui.read_key(block=True)
-                                                    if st_k == 'enter':
-                                                        break
-                                                    elif st_k == 'left' or st_k == 'h':
-                                                        page = 0
-                                                    elif st_k == 'right' or st_k == 'l':
-                                                        page = 1
-                                            elif detail_idx == 1:
-                                                terminal_ui.render_bracket_view(archive_details['bracket'], "Finished", [a['name'] for a in algos])
-                                                while True:
-                                                    if terminal_ui.read_key(block=True) == 'enter':
-                                                        break
-                                            elif detail_idx == 2:
-                                                break
+                                            if is_double_cup:
+                                                if detail_idx == 0:  # World Cup Standings
+                                                    page = 0
+                                                    wc_stands = archive_details['standings']['wc']
+                                                    while True:
+                                                        terminal_ui.render_standings_view(wc_stands, [a['name'] for a in algos], page=page, num_groups=8)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                        elif st_k == 'left' or st_k == 'h':
+                                                            page = 0
+                                                        elif st_k == 'right' or st_k == 'l':
+                                                            page = 1
+                                                elif detail_idx == 1:  # World Cup Bracket
+                                                    page = 0
+                                                    wc_bracket = archive_details['bracket']
+                                                    while True:
+                                                        terminal_ui.render_bracket_view(wc_bracket, "Finished", [a['name'] for a in algos], page=page)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                        elif st_k == 'left' or st_k == 'h':
+                                                            page = max(0, page - 1)
+                                                        elif st_k == 'right' or st_k == 'l':
+                                                            page = min(2, page + 1)
+                                                elif detail_idx == 2:  # Challenger Cup Standings
+                                                    page = 0
+                                                    cc_stands = archive_details['standings']['cc']
+                                                    while True:
+                                                        terminal_ui.render_standings_view(cc_stands, [a['name'] for a in algos], page=page, num_groups=4)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                elif detail_idx == 3:  # Challenger Cup Bracket
+                                                    page = 0
+                                                    cc_bracket_data = archive_details['bracket']
+                                                    while True:
+                                                        terminal_ui.render_challenger_bracket_view(cc_bracket_data, "Challenger Finished", [a['name'] for a in algos], page=page)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                        elif st_k == 'left' or st_k == 'h':
+                                                            page = max(0, page - 1)
+                                                        elif st_k == 'right' or st_k == 'l':
+                                                            page = min(2, page + 1)
+                                                elif detail_idx == 4:
+                                                    break
+                                            else:
+                                                if detail_idx == 0:
+                                                    page = 0
+                                                    while True:
+                                                        terminal_ui.render_standings_view(archive_details['standings'], [a['name'] for a in algos], page=page)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                        elif st_k == 'left' or st_k == 'h':
+                                                            page = 0
+                                                        elif st_k == 'right' or st_k == 'l':
+                                                            page = 1
+                                                elif detail_idx == 1:
+                                                    page = 0
+                                                    wc_bracket = archive_details['bracket']
+                                                    while True:
+                                                        terminal_ui.render_bracket_view(wc_bracket, "Finished", [a['name'] for a in algos], page=page)
+                                                        st_k = terminal_ui.read_key(block=True)
+                                                        if st_k == 'enter':
+                                                            break
+                                                        elif st_k == 'left' or st_k == 'h':
+                                                            page = max(0, page - 1)
+                                                        elif st_k == 'right' or st_k == 'l':
+                                                            page = min(2, page + 1)
+                                                elif detail_idx == 2:
+                                                    break
                 elif selected_menu_idx == 8:  # Legendary Exhibition Matches
                     run_exhibitions(algos, settings, tournament.rng)
                 elif selected_menu_idx == 9:  # Scenario Strengths
-                    run_scenario_strengths(algos)
+                    run_scenario_strengths(algos, tournament)
                 elif selected_menu_idx == 10:  # Hall of Fame
                     run_hall_of_fame()
                 elif selected_menu_idx == 11:  # Settings
@@ -657,15 +820,25 @@ def main():
                 elif selected_menu_idx == 12:  # Start Next Year / Season Reset
                     terminal_ui.clear_screen()
                     header = terminal_ui.draw_trophy_header("SEASON RESET")
-                    box = terminal_ui.draw_box(
-                        "CONFIRM RESET",
-                        [
+                    if tournament.active_cup == "World Cup":
+                        msg_lines = [
                             "",
-                            f"  Are you sure you want to skip to Year {tournament.year + 1}?",
-                            "  This will archive the current standing progress and reset the board.",
+                            "  Are you sure you want to transition to the Challenger Cup?",
+                            "  This will archive World Cup progress and relegate the bottom 8.",
                             "",
                             "  Press [Y] to confirm or [N] to cancel."
-                        ],
+                        ]
+                    else:
+                        msg_lines = [
+                            "",
+                            f"  Are you sure you want to advance to Season Year {tournament.year + 1}?",
+                            "  This will promote the top 8 and start the next World Cup season.",
+                            "",
+                            "  Press [Y] to confirm or [N] to cancel."
+                        ]
+                    box = terminal_ui.draw_box(
+                        "CONFIRM RESET",
+                        msg_lines,
                         width=76,
                         color=terminal_ui.RED
                     )
@@ -679,24 +852,35 @@ def main():
                         elif k == 'n':
                             break
                     if confirmed:
-                        current_list = []
-                        for s in tournament.standings:
-                            current_list.append({
-                                'algo': s['algo'],
-                                'points': s['points'] + s.get('ko_points', 0)
-                            })
-                        current_list.sort(key=lambda x: -x['points'])
-                        leader_name = algos[current_list[0]['algo']]['name'] if current_list else "None"
-                        
-                        tournament.reset_season(champ_name=leader_name)
-                        
-                        terminal_ui.clear_screen()
-                        box = terminal_ui.draw_box(
-                            "RESET SUCCESSFUL",
-                            ["", f"  Successfully advanced to Season Year {tournament.year}!", ""],
-                            width=76,
-                            color=terminal_ui.GREEN
-                        )
+                        if tournament.active_cup == "World Cup":
+                            current_list = []
+                            for s in tournament.standings:
+                                current_list.append({
+                                    'algo': s['algo'],
+                                    'points': s['points'] + s.get('ko_points', 0)
+                                })
+                            current_list.sort(key=lambda x: -x['points'])
+                            leader_name = algos[current_list[0]['algo']]['name'] if current_list else "None"
+                            
+                            tournament.reset_season(champ_name=leader_name)
+                            
+                            terminal_ui.clear_screen()
+                            box = terminal_ui.draw_box(
+                                "TRANSITION SUCCESSFUL",
+                                ["", "  Successfully transitioned to the Challenger Cup!", ""],
+                                width=76,
+                                color=terminal_ui.GREEN
+                            )
+                        else:
+                            tournament.reset_season_challenger()
+                            
+                            terminal_ui.clear_screen()
+                            box = terminal_ui.draw_box(
+                                "RESET SUCCESSFUL",
+                                ["", f"  Successfully advanced to Season Year {tournament.year}!", ""],
+                                width=76,
+                                color=terminal_ui.GREEN
+                            )
                         terminal_ui.write_screen(header + "\n" + box + "\n\n  Press Enter to return to main menu...")
                         while True:
                             if terminal_ui.read_key(block=True) == 'enter':

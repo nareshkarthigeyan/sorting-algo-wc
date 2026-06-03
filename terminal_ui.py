@@ -7,6 +7,13 @@ import termios
 import contextlib
 import math
 
+def clean_name(n):
+    if not isinstance(n, str):
+        return n
+    if n.endswith(" (NEW)"):
+        return n[:-6]
+    return n
+
 # --- ANSI TrueColor Definitions ---
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -278,13 +285,19 @@ def render_resume_prompt():
 # --- Specific Screens ---
 
 
-def render_main_menu(options, selected_idx, array_size, delay, timeout):
+def render_main_menu(options, selected_idx, array_size, delay, timeout, year=2026, active_cup="World Cup"):
     """Renders the main menu dashboard with options and settings information."""
     header = draw_trophy_header("MAIN MENU")
     
+    welcome_text = f"  Welcome to the {BOLD}{GOLD}Sorting Algorithm {active_cup} {year}{RESET}!"
+    if active_cup == "World Cup":
+        desc_text = "  Run 32 sorting algorithms in group stage round-robins and knockout brackets."
+    else:
+        desc_text = "  Run 16 sorting algorithms in group stages, quarterfinals, and last chance playoffs."
+
     content = [
-        f"  Welcome to the {BOLD}{GOLD}Sorting Algorithm World Cup 2026{RESET}!",
-        f"  Run 32 sorting algorithms in group stage round-robins and knockout brackets.",
+        welcome_text,
+        desc_text,
         "",
         f"  {FG_MUTED}Active Configuration:{RESET}",
         f"    • Array Size:     {CYAN}{array_size:,}{RESET} values",
@@ -339,38 +352,398 @@ def render_settings_menu(selected_idx, current_size, current_ko_size, current_fi
     box = draw_box("CONCURRENT STAGE DESIGN", content, width=76, color=VIOLET)
     write_screen(header + "\n" + box)
 
-def render_bracket_view(bracket, current_stage, algo_names):
-    """Draws a gorgeous ASCII representation of the knockout brackets."""
-    header = draw_trophy_header("BRACKET STAGE")
-    content = [
-        f"Stage: {BOLD}{GOLD}{current_stage}{RESET}",
-        "Top 2 from each group advanced into a single-elimination tournament.",
-        ""
-    ]
-    if not bracket:
-        content.append(f"  {RED}Bracket is not populated yet. Run the Group Stage first!{RESET}")
-    else:
-        for i in range(0, len(bracket), 2):
-            left_algo = algo_names[bracket[i]]
-            right_algo = algo_names[bracket[i+1]] if i+1 < len(bracket) else "CHAMPION"
-            content.append(f"      ╭──────────────────────────────╮")
-            content.append(f"   {i//2 + 1:2} │ {CYAN}{left_algo:<28}{RESET}│")
-            content.append(f"      │              {FG_MUTED}VS{RESET}              │")
-            content.append(f"      │ {VIOLET}{right_algo:<28}{RESET}│")
-            content.append(f"      ╰──────────────────────────────╯")
-            content.append("")
-    content.append(f"Press {CYAN}Enter{RESET} to return...")
-    box = draw_box("KNOCKOUT TREE STANDINGS", content, width=76, color=VIOLET)
-    write_screen(header + "\n" + box)
+def reconstruct_wc_bracket(entrants, results, algo_names):
+    def get_name(idx):
+        if idx is None:
+            return "TBD"
+        if isinstance(idx, int) and idx >= 0 and idx < len(algo_names):
+            return algo_names[idx]
+        return str(idx)
+        
+    matches = [{"teamA": "TBD", "teamB": "TBD", "winsA": None, "winsB": None, "winner": None} for _ in range(15)]
+    
+    r16_res = results.get("ROUND OF 16", []) if results else []
+    for i in range(8):
+        if entrants and i * 2 < len(entrants):
+            matches[i]["teamA"] = get_name(entrants[i * 2])
+        if entrants and i * 2 + 1 < len(entrants):
+            matches[i]["teamB"] = get_name(entrants[i * 2 + 1])
+            
+        if i < len(r16_res):
+            res = r16_res[i]
+            matches[i]["winsA"] = res.get("winsA")
+            matches[i]["winsB"] = res.get("winsB")
+            matches[i]["winner"] = res.get("winner")
+            
+    qf_res = results.get("QUARTER FINALS", []) if results else []
+    for i in range(4):
+        winner_left = matches[i * 2]["winner"]
+        matches[8 + i]["teamA"] = winner_left if winner_left else f"Winner Match {i * 2 + 1}"
+        
+        winner_right = matches[i * 2 + 1]["winner"]
+        matches[8 + i]["teamB"] = winner_right if winner_right else f"Winner Match {i * 2 + 2}"
+        
+        if i < len(qf_res):
+            res = qf_res[i]
+            matches[8 + i]["winsA"] = res.get("winsA")
+            matches[8 + i]["winsB"] = res.get("winsB")
+            matches[8 + i]["winner"] = res.get("winner")
+            
+    sf_res = results.get("SEMI FINALS", []) if results else []
+    for i in range(2):
+        winner_left = matches[8 + i * 2]["winner"]
+        matches[12 + i]["teamA"] = winner_left if winner_left else f"Winner QF {i * 2 + 1}"
+        
+        winner_right = matches[8 + i * 2 + 1]["winner"]
+        matches[12 + i]["teamB"] = winner_right if winner_right else f"Winner QF {i * 2 + 2}"
+        
+        if i < len(sf_res):
+            res = sf_res[i]
+            matches[12 + i]["winsA"] = res.get("winsA")
+            matches[12 + i]["winsB"] = res.get("winsB")
+            matches[12 + i]["winner"] = res.get("winner")
+            
+    final_res = results.get("FINAL", []) if results else []
+    winner_left = matches[12]["winner"]
+    matches[14]["teamA"] = winner_left if winner_left else "Winner SF 1"
+    
+    winner_right = matches[13]["winner"]
+    matches[14]["teamB"] = winner_right if winner_right else "Winner SF 2"
+    
+    if len(final_res) > 0:
+        res = final_res[0]
+        matches[14]["winsA"] = res.get("winsA")
+        matches[14]["winsB"] = res.get("winsB")
+        matches[14]["winner"] = res.get("winner")
+        
+    return matches
 
-def render_standings_view(standings, algo_names, page=0):
-    """Renders the points tables for all 8 groups, split into two pages for clean layout."""
-    header = draw_trophy_header("GROUP STANDINGS")
-    groups_to_render = range(0, 4) if page == 0 else range(4, 8)
+def reconstruct_cc_bracket(entrants, cc_lcp, results, algo_names):
+    def get_name(idx):
+        if idx is None:
+            return "TBD"
+        if isinstance(idx, int) and idx >= 0 and idx < len(algo_names):
+            return algo_names[idx]
+        return str(idx)
+        
+    matches = [{"teamA": "TBD", "teamB": "TBD", "winsA": None, "winsB": None, "winner": None, "loser": None} for _ in range(10)]
+    
+    qf_res = results.get("CHALLENGER QF", []) if results else []
+    for i in range(4):
+        if entrants and i * 2 < len(entrants):
+            matches[i]["teamA"] = get_name(entrants[i * 2])
+        if entrants and i * 2 + 1 < len(entrants):
+            matches[i]["teamB"] = get_name(entrants[i * 2 + 1])
+            
+        if i < len(qf_res):
+            res = qf_res[i]
+            matches[i]["winsA"] = res.get("winsA")
+            matches[i]["winsB"] = res.get("winsB")
+            matches[i]["winner"] = res.get("winner")
+            matches[i]["loser"] = res.get("loser")
+            
+    sf_res = results.get("CHALLENGER SF", []) if results else []
+    for i in range(2):
+        winner_left = matches[i * 2]["winner"]
+        matches[4 + i]["teamA"] = winner_left if winner_left else f"Winner QF {i * 2 + 1}"
+        
+        winner_right = matches[i * 2 + 1]["winner"]
+        matches[4 + i]["teamB"] = winner_right if winner_right else f"Winner QF {i * 2 + 2}"
+        
+        if i < len(sf_res):
+            res = sf_res[i]
+            matches[4 + i]["winsA"] = res.get("winsA")
+            matches[4 + i]["winsB"] = res.get("winsB")
+            matches[4 + i]["winner"] = res.get("winner")
+            
+    lcp_res = results.get("LCP SEMI", []) if results else []
+    for i in range(2):
+        loser_left = matches[i * 2]["loser"]
+        matches[6 + i]["teamA"] = loser_left if loser_left else f"Loser QF {i * 2 + 1}"
+        
+        loser_right = matches[i * 2 + 1]["loser"]
+        matches[6 + i]["teamB"] = loser_right if loser_right else f"Loser QF {i * 2 + 2}"
+        
+        if i < len(lcp_res):
+            res = lcp_res[i]
+            matches[6 + i]["winsA"] = res.get("winsA")
+            matches[6 + i]["winsB"] = res.get("winsB")
+            matches[6 + i]["winner"] = res.get("winner")
+            
+    final_res = results.get("CHALLENGER FINAL", []) if results else []
+    winner_left = matches[4]["winner"]
+    matches[8]["teamA"] = winner_left if winner_left else "Winner SF 1"
+    
+    winner_right = matches[5]["winner"]
+    matches[8]["teamB"] = winner_right if winner_right else "Winner SF 2"
+    
+    if len(final_res) > 0:
+        res = final_res[0]
+        matches[8]["winsA"] = res.get("winsA")
+        matches[8]["winsB"] = res.get("winsB")
+        matches[8]["winner"] = res.get("winner")
+        
+    lcp_final_res = results.get("LCP FINAL", []) if results else []
+    winner_left = matches[6]["winner"]
+    matches[9]["teamA"] = winner_left if winner_left else "Winner LCP Semi 1"
+    
+    winner_right = matches[7]["winner"]
+    matches[9]["teamB"] = winner_right if winner_right else "Winner LCP Semi 2"
+    
+    if len(lcp_final_res) > 0:
+        res = lcp_final_res[0]
+        matches[9]["winsA"] = res.get("winsA")
+        matches[9]["winsB"] = res.get("winsB")
+        matches[9]["winner"] = res.get("winner")
+        
+    return matches
+
+def render_bracket_view(bracket, current_stage, algo_names, page=0):
+    """Draws a gorgeous ASCII representation of the knockout brackets."""
+    header = draw_trophy_header("WORLD CUP BRACKET")
+    
+    if isinstance(bracket, dict):
+        entrants = bracket.get("wc", [])
+        results = bracket.get("wc_results", {})
+    else:
+        if isinstance(bracket, list) and len(bracket) == 16:
+            entrants = bracket
+            results = {}
+        else:
+            header = draw_trophy_header("BRACKET STAGE")
+            content = [
+                f"Stage: {BOLD}{GOLD}{current_stage}{RESET}",
+                "Top 2 from each group advanced into a single-elimination tournament.",
+                ""
+            ]
+            if not bracket:
+                content.append(f"  {RED}Bracket is not populated yet. Run the Group Stage first!{RESET}")
+            else:
+                for i in range(0, len(bracket), 2):
+                    left_algo = algo_names[bracket[i]] if isinstance(bracket[i], int) else str(bracket[i])
+                    right_algo = algo_names[bracket[i+1]] if (i+1 < len(bracket) and isinstance(bracket[i+1], int)) else (str(bracket[i+1]) if i+1 < len(bracket) else "CHAMPION")
+                    content.append(f"      ╭──────────────────────────────╮")
+                    content.append(f"   {i//2 + 1:2} │ {CYAN}{left_algo:<28}{RESET}│")
+                    content.append(f"      │              {FG_MUTED}VS{RESET}              │")
+                    content.append(f"      │ {VIOLET}{right_algo:<28}{RESET}│")
+                    content.append(f"      ╰──────────────────────────────╯")
+                    content.append("")
+            content.append(f"Press {CYAN}Enter{RESET} to return...")
+            box = draw_box("KNOCKOUT TREE STANDINGS", content, width=76, color=VIOLET)
+            write_screen(header + "\n" + box)
+            return
+
+    matches = reconstruct_wc_bracket(entrants, results, algo_names)
     
     content = []
-    content.append(f"Showing Groups {chr(ord('A') + groups_to_render[0])}-{chr(ord('A') + groups_to_render[-1])}  |  Use {CYAN}← / → Arrows{RESET} to switch pages.")
-    content.append(f"Press {CYAN}Enter{RESET} to exit to main menu.")
+    nav_tip = f"Page {page+1} / 3  |  Use {CYAN}← / → Arrows{RESET} to browse stages. Press {CYAN}Enter{RESET} to return."
+    content.append(nav_tip)
+    content.append("")
+    
+    def format_match_pair(match_left, match_right, idx_left, idx_right):
+        lines = []
+        hdr = f"  {BOLD}{GOLD}Match {idx_left+1:<28}{RESET}    {BOLD}{GOLD}Match {idx_right+1:<28}{RESET}"
+        lines.append(hdr)
+        
+        tA_L = match_left["teamA"]
+        sA_L = f"( {match_left['winsA']} )" if match_left["winsA"] is not None else "     "
+        wA_L = f"{GREEN}✔{RESET}" if match_left["winner"] == tA_L and match_left["winner"] else " "
+        tA_L_disp = f"{BOLD}{CYAN}{tA_L:<24}{RESET}" if match_left["winner"] == tA_L and tA_L != "TBD" else f"{CYAN}{tA_L:<24}{RESET}"
+        
+        tA_R = match_right["teamA"]
+        sA_R = f"( {match_right['winsA']} )" if match_right["winsA"] is not None else "     "
+        wA_R = f"{GREEN}✔{RESET}" if match_right["winner"] == tA_R and match_right["winner"] else " "
+        tA_R_disp = f"{BOLD}{CYAN}{tA_R:<24}{RESET}" if match_right["winner"] == tA_R and tA_R != "TBD" else f"{CYAN}{tA_R:<24}{RESET}"
+        
+        lines.append(f"  {tA_L_disp} {sA_L}  {wA_L}    {tA_R_disp} {sA_R}  {wA_R}")
+        
+        tB_L = match_left["teamB"]
+        sB_L = f"( {match_left['winsB']} )" if match_left["winsB"] is not None else "     "
+        wB_L = f"{GREEN}✔{RESET}" if match_left["winner"] == tB_L and match_left["winner"] else " "
+        tB_L_disp = f"{BOLD}{VIOLET}{tB_L:<24}{RESET}" if match_left["winner"] == tB_L and tB_L != "TBD" else f"{VIOLET}{tB_L:<24}{RESET}"
+        
+        tB_R = match_right["teamB"]
+        sB_R = f"( {match_right['winsB']} )" if match_right["winsB"] is not None else "     "
+        wB_R = f"{GREEN}✔{RESET}" if match_right["winner"] == tB_R and match_right["winner"] else " "
+        tB_R_disp = f"{BOLD}{VIOLET}{tB_R:<24}{RESET}" if match_right["winner"] == tB_R and tB_R != "TBD" else f"{VIOLET}{tB_R:<24}{RESET}"
+        
+        lines.append(f"  {tB_L_disp} {sB_L}  {wB_L}    {tB_R_disp} {sB_R}  {wB_R}")
+        lines.append(f"  {FG_MUTED}{'─'*34}{RESET}    {FG_MUTED}{'─'*34}{RESET}")
+        return lines
+
+    if page == 0:
+        content.append(f"               {BOLD}{GOLD}--- STAGE: ROUND OF 16 ---{RESET}")
+        content.append("")
+        for row in range(4):
+            m_left = matches[row]
+            m_right = matches[4 + row]
+            content.extend(format_match_pair(m_left, m_right, row, 4 + row))
+            
+    elif page == 1:
+        content.append(f"               {BOLD}{GOLD}--- STAGE: QUARTER FINALS ---{RESET}")
+        content.append("")
+        for row in range(2):
+            m_left = matches[8 + row]
+            m_right = matches[10 + row]
+            content.extend(format_match_pair(m_left, m_right, 8 + row, 10 + row))
+            
+    else:
+        content.append(f"            {BOLD}{GOLD}--- STAGE: SEMI FINALS & FINAL ---{RESET}")
+        content.append("")
+        content.extend(format_match_pair(matches[12], matches[13], 12, 13))
+        content.append("")
+        
+        m_final = matches[14]
+        content.append(f"                           {BOLD}{GOLD}🏆 Match 15: FINAL 🏆{RESET}")
+        
+        tA = m_final["teamA"]
+        sA = f"( {m_final['winsA']} )" if m_final["winsA"] is not None else "     "
+        wA = f"{GREEN}✔{RESET}" if m_final["winner"] == tA and m_final["winner"] else " "
+        tA_disp = f"{BOLD}{CYAN}{tA:<24}{RESET}" if m_final["winner"] == tA and tA != "TBD" else f"{CYAN}{tA:<24}{RESET}"
+        content.append(f"                     {tA_disp} {sA}  {wA}")
+        
+        tB = m_final["teamB"]
+        sB = f"( {m_final['winsB']} )" if m_final["winsB"] is not None else "     "
+        wB = f"{GREEN}✔{RESET}" if m_final["winner"] == tB and m_final["winner"] else " "
+        tB_disp = f"{BOLD}{VIOLET}{tB:<24}{RESET}" if m_final["winner"] == tB and tB != "TBD" else f"{VIOLET}{tB:<24}{RESET}"
+        content.append(f"                     {tB_disp} {sB}  {wB}")
+        content.append(f"                     {FG_MUTED}{'─'*34}{RESET}")
+        
+    box = draw_box("WORLD CUP KNOCKOUT BRACKET", content, width=76, color=VIOLET)
+    write_screen(header + "\n" + box)
+
+def render_challenger_bracket_view(cc_bracket_data, current_stage, algo_names, page=0):
+    """Draws a gorgeous ASCII representation of Challenger Cup and LCP brackets."""
+    header = draw_trophy_header("CHALLENGER CUP BRACKET")
+    
+    if isinstance(cc_bracket_data, dict):
+        entrants = cc_bracket_data.get("cc_main", [])
+        cc_lcp = cc_bracket_data.get("cc_lcp", [])
+        results = cc_bracket_data.get("cc_results", {})
+    else:
+        # Check if list format
+        if isinstance(cc_bracket_data, list):
+            entrants = cc_bracket_data
+            cc_lcp = current_stage if isinstance(current_stage, list) else []
+            results = {}
+        else:
+            header = draw_trophy_header("CHALLENGER BRACKET")
+            content = [
+                f"Stage: {BOLD}{GOLD}{current_stage}{RESET}",
+                "Top 2 from each group advanced. QF winners promote. QF losers play Last Chance.",
+                ""
+            ]
+            
+            content.append(f"{BOLD}{GOLD}CHAMPIONSHIP PATH (Top 4 & CC Trophy){RESET}")
+            content.append(f"  {FG_DARK}Not populated yet (Run Group Stage first).{RESET}")
+            content.append("")
+            content.append(f"{BOLD}{GOLD}LAST CHANCE PLAYOFF PATH (5th-8th Promotion){RESET}")
+            content.append(f"  {FG_DARK}Not populated yet (LCP starts after QFs).{RESET}")
+            content.append(f"Press {CYAN}Enter{RESET} to return...")
+            box = draw_box("CHALLENGER CUP BRACKET", content, width=76, color=VIOLET)
+            write_screen(header + "\n" + box)
+            return
+
+    matches = reconstruct_cc_bracket(entrants, cc_lcp, results, algo_names)
+    
+    content = []
+    nav_tip = f"Page {page+1} / 3  |  Use {CYAN}← / → Arrows{RESET} to browse stages. Press {CYAN}Enter{RESET} to return."
+    content.append(nav_tip)
+    content.append("")
+    
+    def format_match_pair(match_left, match_right, idx_left, idx_right):
+        lines = []
+        hdr = f"  {BOLD}{GOLD}Match {idx_left+1:<28}{RESET}    {BOLD}{GOLD}Match {idx_right+1:<28}{RESET}"
+        lines.append(hdr)
+        
+        tA_L = match_left["teamA"]
+        sA_L = f"( {match_left['winsA']} )" if match_left["winsA"] is not None else "     "
+        wA_L = f"{GREEN}✔{RESET}" if match_left["winner"] == tA_L and match_left["winner"] else " "
+        tA_L_disp = f"{BOLD}{CYAN}{tA_L:<24}{RESET}" if match_left["winner"] == tA_L and tA_L != "TBD" else f"{CYAN}{tA_L:<24}{RESET}"
+        
+        tA_R = match_right["teamA"]
+        sA_R = f"( {match_right['winsA']} )" if match_right["winsA"] is not None else "     "
+        wA_R = f"{GREEN}✔{RESET}" if match_right["winner"] == tA_R and match_right["winner"] else " "
+        tA_R_disp = f"{BOLD}{CYAN}{tA_R:<24}{RESET}" if match_right["winner"] == tA_R and tA_R != "TBD" else f"{CYAN}{tA_R:<24}{RESET}"
+        
+        lines.append(f"  {tA_L_disp} {sA_L}  {wA_L}    {tA_R_disp} {sA_R}  {wA_R}")
+        
+        tB_L = match_left["teamB"]
+        sB_L = f"( {match_left['winsB']} )" if match_left["winsB"] is not None else "     "
+        wB_L = f"{GREEN}✔{RESET}" if match_left["winner"] == tB_L and match_left["winner"] else " "
+        tB_L_disp = f"{BOLD}{VIOLET}{tB_L:<24}{RESET}" if match_left["winner"] == tB_L and tB_L != "TBD" else f"{VIOLET}{tB_L:<24}{RESET}"
+        
+        tB_R = match_right["teamB"]
+        sB_R = f"( {match_right['winsB']} )" if match_right["winsB"] is not None else "     "
+        wB_R = f"{GREEN}✔{RESET}" if match_right["winner"] == tB_R and match_right["winner"] else " "
+        tB_R_disp = f"{BOLD}{VIOLET}{tB_R:<24}{RESET}" if match_right["winner"] == tB_R and tB_R != "TBD" else f"{VIOLET}{tB_R:<24}{RESET}"
+        
+        lines.append(f"  {tB_L_disp} {sB_L}  {wB_L}    {tB_R_disp} {sB_R}  {wB_R}")
+        lines.append(f"  {FG_MUTED}{'─'*34}{RESET}    {FG_MUTED}{'─'*34}{RESET}")
+        return lines
+
+    if page == 0:
+        content.append(f"             {BOLD}{GOLD}--- STAGE: CHALLENGER QUARTER FINALS ---{RESET}")
+        content.append("")
+        content.extend(format_match_pair(matches[0], matches[1], 0, 1))
+        content.extend(format_match_pair(matches[2], matches[3], 2, 3))
+        
+    elif page == 1:
+        content.append(f"             {BOLD}{GOLD}--- PATH: CHAMPIONSHIP SEMIS & FINAL ---{RESET}")
+        content.append("")
+        content.extend(format_match_pair(matches[4], matches[5], 4, 5))
+        content.append("")
+        
+        m_final = matches[8]
+        content.append(f"                           {BOLD}{GOLD}🏆 Match 9: CHALLENGER FINAL 🏆{RESET}")
+        
+        tA = m_final["teamA"]
+        sA = f"( {m_final['winsA']} )" if m_final["winsA"] is not None else "     "
+        wA = f"{GREEN}✔{RESET}" if m_final["winner"] == tA and m_final["winner"] else " "
+        tA_disp = f"{BOLD}{CYAN}{tA:<24}{RESET}" if m_final["winner"] == tA and tA != "TBD" else f"{CYAN}{tA:<24}{RESET}"
+        content.append(f"                     {tA_disp} {sA}  {wA}")
+        
+        tB = m_final["teamB"]
+        sB = f"( {m_final['winsB']} )" if m_final["winsB"] is not None else "     "
+        wB = f"{GREEN}✔{RESET}" if m_final["winner"] == tB and m_final["winner"] else " "
+        tB_disp = f"{BOLD}{VIOLET}{tB:<24}{RESET}" if m_final["winner"] == tB and tB != "TBD" else f"{VIOLET}{tB:<24}{RESET}"
+        content.append(f"                     {tB_disp} {sB}  {wB}")
+        content.append(f"                     {FG_MUTED}{'─'*34}{RESET}")
+        
+    else:
+        content.append(f"            {BOLD}{GOLD}--- PATH: LAST CHANCE PLAYOFF SEMIS & FINAL ---{RESET}")
+        content.append("")
+        content.extend(format_match_pair(matches[6], matches[7], 6, 7))
+        content.append("")
+        
+        m_final = matches[9]
+        content.append(f"                           {BOLD}{GOLD}🏆 Match 10: LAST CHANCE FINAL 🏆{RESET}")
+        
+        tA = m_final["teamA"]
+        sA = f"( {m_final['winsA']} )" if m_final["winsA"] is not None else "     "
+        wA = f"{GREEN}✔{RESET}" if m_final["winner"] == tA and m_final["winner"] else " "
+        tA_disp = f"{BOLD}{CYAN}{tA:<24}{RESET}" if m_final["winner"] == tA and tA != "TBD" else f"{CYAN}{tA:<24}{RESET}"
+        content.append(f"                     {tA_disp} {sA}  {wA}")
+        
+        tB = m_final["teamB"]
+        sB = f"( {m_final['winsB']} )" if m_final["winsB"] is not None else "     "
+        wB = f"{GREEN}✔{RESET}" if m_final["winner"] == tB and m_final["winner"] else " "
+        tB_disp = f"{BOLD}{VIOLET}{tB:<24}{RESET}" if m_final["winner"] == tB and tB != "TBD" else f"{VIOLET}{tB:<24}{RESET}"
+        content.append(f"                     {tB_disp} {sB}  {wB}")
+        content.append(f"                     {FG_MUTED}{'─'*34}{RESET}")
+
+def render_standings_view(standings, algo_names, page=0, num_groups=8):
+    """Renders the points tables for all groups, split into two pages if 8 groups."""
+    header = draw_trophy_header("GROUP STANDINGS")
+    if num_groups == 4:
+        groups_to_render = range(0, 4)
+        nav_tip = f"Press {CYAN}Enter{RESET} to exit to main menu."
+    else:
+        groups_to_render = range(0, 4) if page == 0 else range(4, 8)
+        nav_tip = f"Showing Groups {chr(ord('A') + groups_to_render[0])}-{chr(ord('A') + groups_to_render[-1])}  |  Use {CYAN}← / → Arrows{RESET} to switch pages. Press {CYAN}Enter{RESET} to exit."
+    
+    content = []
+    content.append(nav_tip)
     content.append("")
     
     for g in groups_to_render:
@@ -405,20 +778,19 @@ def render_standings_view(standings, algo_names, page=0):
     box = draw_box("ROUND ROBIN SUMMARY", content, width=76, color=GREEN)
     write_screen(header + "\n" + box)
 
-def render_group_draw(groups, algo_names, highlighted_group=-1, opening_pot=None):
+def render_group_draw(groups, algo_names, highlighted_group=-1, opening_pot=None, num_groups=8):
     """Renders the lottery draw board where algorithms are assigned to groups."""
     subtitle = "GROUP DRAW LOTTERY"
     if opening_pot is not None:
         subtitle += f" - POT {opening_pot + 1}"
     header = draw_trophy_header(subtitle)
     
-    # Render all 8 groups in a 4x2 grid
-    # Groups are: A(0), B(1), C(2), D(3), E(4), F(5), G(6), H(7)
+    # We display groups in pairs
+    pairs = [(0, 1), (2, 3)]
+    if num_groups == 8:
+        pairs += [(4, 5), (6, 7)]
+        
     grid_lines = []
-    
-    # We display groups in pairs: (A, B), (C, D), (E, F), (G, H)
-    pairs = [(0, 1), (2, 3), (4, 5), (6, 7)]
-    
     for g1, g2 in pairs:
         border1_color = CYAN if g1 == highlighted_group else BLUE
         border2_color = CYAN if g2 == highlighted_group else BLUE
@@ -579,9 +951,9 @@ def render_live_race(stA, stB, scenario_name, scenario_desc, round_num, array_si
         # Find entry indices in standings copy
         entryA, entryB = None, None
         for s in temp_standings:
-            if algo_names[s['algo']] == nameA:
+            if clean_name(algo_names[s['algo']]) == clean_name(nameA):
                 entryA = s
-            elif algo_names[s['algo']] == nameB:
+            elif clean_name(algo_names[s['algo']]) == clean_name(nameB):
                 entryB = s
                 
         # Apply temporary round outcomes if any round has completed
@@ -627,10 +999,10 @@ def render_live_race(stA, stB, scenario_name, scenario_desc, round_num, array_si
             avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s" if s['played'] > 0 else "0.0000s"
             
             # Highlight current competitors, and grey out the others
-            if algo_names[s['algo']] == nameA:
+            if clean_name(algo_names[s['algo']]) == clean_name(nameA):
                 c_pos = GREEN if pos <= 2 else RESET
                 row = f"   {c_pos}{pos:<2} {BOLD}{CYAN}{name:<20}{RESET} {s['played']:>3} {BOLD}{s['points']:>4}{RESET} {s['matchWins']:>3} {s['matchDraws']:>3} {s['matchLosses']:>3} {diff_str:>5} {avg_time_str:>10}"
-            elif algo_names[s['algo']] == nameB:
+            elif clean_name(algo_names[s['algo']]) == clean_name(nameB):
                 c_pos = GREEN if pos <= 2 else RESET
                 row = f"   {c_pos}{pos:<2} {BOLD}{VIOLET}{name:<20}{RESET} {s['played']:>3} {BOLD}{s['points']:>4}{RESET} {s['matchWins']:>3} {s['matchDraws']:>3} {s['matchLosses']:>3} {diff_str:>5} {avg_time_str:>10}"
             else:
@@ -677,9 +1049,9 @@ def draw_round_result(nameA, nameB, rr, winsA, winsB, ties, stage_title, group_i
         
         entryA, entryB = None, None
         for s in temp_standings:
-            if algo_names[s['algo']] == nameA:
+            if clean_name(algo_names[s['algo']]) == clean_name(nameA):
                 entryA = s
-            elif algo_names[s['algo']] == nameB:
+            elif clean_name(algo_names[s['algo']]) == clean_name(nameB):
                 entryB = s
                 
         if entryA and entryB:
@@ -722,10 +1094,10 @@ def draw_round_result(nameA, nameB, rr, winsA, winsB, ties, stage_title, group_i
             avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s" if s['played'] > 0 else "0.0000s"
             
             # Highlight current competitors, and grey out the others
-            if algo_names[s['algo']] == nameA:
+            if clean_name(algo_names[s['algo']]) == clean_name(nameA):
                 c_pos = GREEN if pos <= 2 else RESET
                 row = f"   {c_pos}{pos:<2} {BOLD}{CYAN}{name:<20}{RESET} {s['played']:>3} {BOLD}{s['points']:>4}{RESET} {s['matchWins']:>3} {s['matchDraws']:>3} {s['matchLosses']:>3} {diff_str:>5} {avg_time_str:>10}"
-            elif algo_names[s['algo']] == nameB:
+            elif clean_name(algo_names[s['algo']]) == clean_name(nameB):
                 c_pos = GREEN if pos <= 2 else RESET
                 row = f"   {c_pos}{pos:<2} {BOLD}{VIOLET}{name:<20}{RESET} {s['played']:>3} {BOLD}{s['points']:>4}{RESET} {s['matchWins']:>3} {s['matchDraws']:>3} {s['matchLosses']:>3} {diff_str:>5} {avg_time_str:>10}"
             else:
@@ -863,7 +1235,7 @@ def render_scenario_strengths_view(perf, algo_names, page=0):
         row_str = f"  {BOLD}{name:<22}{RESET}"
         
         for s_id in range(5):
-            p = perf.get(name, {}).get(str(s_id)) or perf.get(name, {}).get(s_id)
+            p = perf.get(clean_name(name), {}).get(str(s_id)) or perf.get(clean_name(name), {}).get(s_id)
             if p and p.get('avg_time_ns', 0) > 0:
                 ms = p['avg_time_ns'] / 1_000_000
                 if ms < 1.0:
@@ -957,12 +1329,21 @@ def render_exhibition_battle_royale(states, scenario_name, elapsed_ms, array_siz
     write_screen(header + "\n" + box)
 
 def render_fixtures_view(fixtures, algo_names, page=0):
-    """Renders the scheduled matches list split across 2 pages (Groups A-D vs E-H)."""
+    """Renders the scheduled matches list dynamically split across pages."""
     header = draw_trophy_header("SCHEDULED FIXTURES")
-    groups_to_render = range(0, 4) if page == 0 else range(4, 8)
+    num_groups = max([f['group'] for f in fixtures]) + 1 if fixtures else 8
     
+    if num_groups <= 4:
+        # 1 page total for Challenger Cup
+        groups_to_render = range(0, num_groups)
+        content_header = f"Showing Groups A-{chr(ord('A') + num_groups - 1)}  |  Press {CYAN}Enter{RESET} to exit."
+    else:
+        # 2 pages for World Cup
+        groups_to_render = range(0, 4) if page == 0 else range(4, 8)
+        content_header = f"Showing Groups {chr(ord('A') + groups_to_render[0])}-{chr(ord('A') + groups_to_render[-1])}  |  Use {CYAN}← / → Arrows{RESET} to switch pages."
+        
     content = []
-    content.append(f"Showing Groups {chr(ord('A') + groups_to_render[0])}-{chr(ord('A') + groups_to_render[-1])}  |  Use {CYAN}← / → Arrows{RESET} to switch pages.")
+    content.append(content_header)
     content.append(f"Press {CYAN}Enter{RESET} to exit to main menu.")
     content.append("")
     
@@ -982,7 +1363,7 @@ def render_fixtures_view(fixtures, algo_names, page=0):
     write_screen(header + "\n" + box)
 
 def render_rating_board(ratings_list, page=0):
-    """Renders the ELO rating board, paginated (16 algorithms per page)."""
+    """Renders the ELO rating board, paginated (20 algorithms per page)."""
     header = draw_trophy_header("WORLD RATING BOARD")
     
     content = []
@@ -994,8 +1375,8 @@ def render_rating_board(ratings_list, page=0):
     content.append(col_header)
     content.append("  " + "─" * 68)
     
-    start_idx = page * 16
-    end_idx = min(start_idx + 16, len(ratings_list))
+    start_idx = page * 20
+    end_idx = min(start_idx + 20, len(ratings_list))
     
     for idx in range(start_idx, end_idx):
         item = ratings_list[idx]
@@ -1020,13 +1401,13 @@ def render_rating_board(ratings_list, page=0):
     write_screen(header + "\n" + box)
 
 def render_consolidated_standings(current_stands, all_time_stands, page=0):
-    """Renders a consolidated standings table for all 32 algorithms."""
+    """Renders a consolidated standings table for all 40 algorithms (20 per page)."""
     is_all_time = page >= 2
     title = "ALL-TIME CONSOLIDATED POINTS TABLE" if is_all_time else "CURRENT SEASON CONSOLIDATED TABLE"
     header = draw_trophy_header(title)
     
     content = []
-    content.append(f"Rankings 1-32  |  Page {page+1}/4  |  Use {CYAN}← / → Arrows{RESET} to switch pages.")
+    content.append(f"Rankings  |  Page {page+1}/4  |  Use {CYAN}← / → Arrows{RESET} to switch pages.")
     content.append(f"Press {CYAN}Enter{RESET} to exit to main menu.")
     content.append("")
     
@@ -1036,35 +1417,38 @@ def render_consolidated_standings(current_stands, all_time_stands, page=0):
     
     stands = all_time_stands if is_all_time else current_stands
     local_page = page % 2
-    start_idx = local_page * 16
-    end_idx = min(start_idx + 16, len(stands))
+    start_idx = local_page * 20
+    end_idx = min(start_idx + 20, len(stands))
     
-    for idx in range(start_idx, end_idx):
-        s = stands[idx]
-        rank = idx + 1
-        name = s['name'][:18]
-        played = s['played']
-        points = s['points']
-        wins = s['matchWins']
-        draws = s['matchDraws']
-        losses = s['matchLosses']
-        diff = s['roundWins'] - s['roundLosses']
-        diff_str = f"+{diff}" if diff > 0 else str(diff)
-        
-        if is_all_time:
-            if s['total_sorted_rounds'] > 0:
-                avg_ns = s['total_sorted_time_ns'] / s['total_sorted_rounds']
-                avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s"
-            else:
-                avg_time_str = "0.0000s"
-        else:
-            avg_ns = s['ns'] / played if played > 0 else 0
-            avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s" if played > 0 else "0.0000s"
+    if start_idx >= len(stands):
+        content.append("  No further entries for this category.")
+    else:
+        for idx in range(start_idx, end_idx):
+            s = stands[idx]
+            rank = idx + 1
+            name = s['name'][:18]
+            played = s['played']
+            points = s['points']
+            wins = s['matchWins']
+            draws = s['matchDraws']
+            losses = s['matchLosses']
+            diff = s['roundWins'] - s['roundLosses']
+            diff_str = f"+{diff}" if diff > 0 else str(diff)
             
-        color_row = GREEN if rank <= 8 else RESET
-        row = f"  {rank:<5} {color_row}{name:<20}{RESET} {played:>3} {BOLD}{points:>4}{RESET} {wins:>3} {draws:>3} {losses:>3} {diff_str:>5} {avg_time_str:>10}"
-        content.append(row)
-        
+            if is_all_time:
+                if s['total_sorted_rounds'] > 0:
+                    avg_ns = s['total_sorted_time_ns'] / s['total_sorted_rounds']
+                    avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s"
+                else:
+                    avg_time_str = "0.0000s"
+            else:
+                avg_ns = s['ns'] / played if played > 0 else 0
+                avg_time_str = f"{avg_ns / 1_000_000_000:.4f}s" if played > 0 else "0.0000s"
+                
+            color_row = GREEN if rank <= 8 else RESET
+            row = f"  {rank:<5} {color_row}{name:<20}{RESET} {played:>3} {BOLD}{points:>4}{RESET} {wins:>3} {draws:>3} {losses:>3} {diff_str:>5} {avg_time_str:>10}"
+            content.append(row)
+            
     content.append("  " + "─" * 64)
     box = draw_box("CONSOLIDATED POINTS SUMMARY", content, width=76, color=GREEN if not is_all_time else BLUE)
     write_screen(header + "\n" + box)

@@ -192,7 +192,24 @@ def save_tournament(tournament, db_path=DB_FILE):
         ("lowest_ops_round_algo", str(getattr(tournament, "lowest_ops_round_algo", ""))),
         ("giant_kills_json", json.dumps(getattr(tournament, "giant_kills", []))),
         ("autoplay", str(1 if getattr(tournament, "autoplay", False) else 0)),
-        ("bracket_entrants_json", json.dumps(getattr(tournament, "bracket_entrants", [])))
+        ("bracket_entrants_json", json.dumps(getattr(tournament, "bracket_entrants", []))),
+        ("active_cup", getattr(tournament, "active_cup", "World Cup")),
+        ("wc_teams_json", json.dumps(getattr(tournament, "wc_teams", []))),
+        ("challenger_teams_json", json.dumps(getattr(tournament, "challenger_teams", []))),
+        ("relegated_teams_json", json.dumps(getattr(tournament, "relegated_teams", []))),
+        ("promoted_teams_json", json.dumps(getattr(tournament, "promoted_teams", []))),
+        ("challenger_cup_winner", getattr(tournament, "challenger_cup_winner", "")),
+        ("cc_current_bracket_json", json.dumps(getattr(tournament, "cc_current_bracket", []))),
+        ("cc_bracket_entrants_json", json.dumps(getattr(tournament, "cc_bracket_entrants", []))),
+        ("cc_lcp_bracket_json", json.dumps(getattr(tournament, "cc_lcp_bracket", []))),
+        ("cc_lcp_entrants_json", json.dumps(getattr(tournament, "cc_lcp_entrants", []))),
+        ("archive_wc_standings_json", json.dumps(getattr(tournament, "archive_wc_standings", []))),
+        ("archive_wc_bracket_json", json.dumps(getattr(tournament, "archive_wc_bracket", []))),
+        ("archive_wc_fixtures_json", json.dumps(getattr(tournament, "archive_wc_fixtures", []))),
+        ("archive_wc_champ", getattr(tournament, "archive_wc_champ", "")),
+        ("knockout_results_json", json.dumps(getattr(tournament, "knockout_results", {}))),
+        ("cc_knockout_results_json", json.dumps(getattr(tournament, "cc_knockout_results", {}))),
+        ("archive_wc_results_json", json.dumps(getattr(tournament, "archive_wc_results", {})))
     ]
     cursor.executemany("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", settings_data)
 
@@ -301,41 +318,70 @@ def load_tournament(tournament, db_path=DB_FILE):
         if "bracket_entrants_json" in settings_dict:
             tournament.bracket_entrants = json.loads(settings_dict["bracket_entrants_json"])
 
+        tournament.active_cup = settings_dict.get("active_cup", "World Cup")
+        tournament.wc_teams = json.loads(settings_dict.get("wc_teams_json", "[]"))
+        tournament.challenger_teams = json.loads(settings_dict.get("challenger_teams_json", "[]"))
+        tournament.relegated_teams = json.loads(settings_dict.get("relegated_teams_json", "[]"))
+        tournament.promoted_teams = json.loads(settings_dict.get("promoted_teams_json", "[]"))
+        
+        # Backward-compatibility fallbacks
+        new_algo_names = ["PDQSort", "GrailSort", "Flash Sort", "WikiSort", "Sleep Sort", "American Flag Sort", "Gravity Sort", "Slowsort"]
+        if not tournament.wc_teams:
+            tournament.wc_teams = [a['name'] for a in tournament.algos if a['name'] not in new_algo_names]
+        if not tournament.challenger_teams:
+            tournament.challenger_teams = [a['name'] for a in tournament.algos if a['name'] in new_algo_names and a['name'] not in tournament.relegated_teams and a['name'] not in tournament.promoted_teams]
+
+        tournament.challenger_cup_winner = settings_dict.get("challenger_cup_winner", "")
+        tournament.cc_current_bracket = json.loads(settings_dict.get("cc_current_bracket_json", "[]"))
+        tournament.cc_bracket_entrants = json.loads(settings_dict.get("cc_bracket_entrants_json", "[]"))
+        tournament.cc_lcp_bracket = json.loads(settings_dict.get("cc_lcp_bracket_json", "[]"))
+        tournament.cc_lcp_entrants = json.loads(settings_dict.get("cc_lcp_entrants_json", "[]"))
+        tournament.archive_wc_standings = json.loads(settings_dict.get("archive_wc_standings_json", "[]"))
+        tournament.archive_wc_bracket = json.loads(settings_dict.get("archive_wc_bracket_json", "[]"))
+        tournament.archive_wc_fixtures = json.loads(settings_dict.get("archive_wc_fixtures_json", "[]"))
+        tournament.archive_wc_champ = settings_dict.get("archive_wc_champ", "")
+        tournament.knockout_results = json.loads(settings_dict.get("knockout_results_json", "{}"))
+        tournament.cc_knockout_results = json.loads(settings_dict.get("cc_knockout_results_json", "{}"))
+        tournament.archive_wc_results = json.loads(settings_dict.get("archive_wc_results_json", "{}"))
+
         cursor.execute("SELECT group_id, slot, algo_id FROM group_assignments ORDER BY group_id, slot")
         rows = cursor.fetchall()
-        groups = [[] for _ in range(8)]
+        max_g = 7
+        for r in rows:
+            max_g = max(max_g, r[0])
+        groups = [[] for _ in range(max_g + 1)]
         for r in rows:
             g_id, slot, algo_id = r
             groups[g_id].append(algo_id)
         tournament.groups = groups
         tournament.build_schedule()
         
+        # Ensure tournament.standings has 40 entries
+        if not hasattr(tournament, 'standings') or len(tournament.standings) != len(tournament.algos):
+            tournament.standings = [{'algo': i, 'group': -1, 'played': 0, 'points': 0, 'matchWins': 0, 'matchDraws': 0, 'matchLosses': 0, 'roundWins': 0, 'roundLosses': 0, 'ns': 0, 'ko_played': 0, 'ko_points': 0, 'ko_matchWins': 0, 'ko_matchLosses': 0, 'ko_roundWins': 0, 'ko_roundLosses': 0, 'ko_ns': 0} for i in range(len(tournament.algos))]
+            
         cursor.execute("SELECT algo_id, group_id, played, points, match_wins, match_draws, match_losses, round_wins, round_losses, ns, ko_played, ko_points, ko_match_wins, ko_match_losses, ko_round_wins, ko_round_losses, ko_ns FROM standings")
         rows = cursor.fetchall()
-        standings = []
         for r in rows:
             algo_id, g_id, played, pts, m_w, m_d, m_l, r_w, r_l, ns, ko_p, ko_pts, ko_mw, ko_ml, ko_rw, ko_rl, ko_ns = r
-            standings.append({
-                'algo': algo_id,
-                'group': g_id,
-                'played': played,
-                'points': pts,
-                'matchWins': m_w,
-                'matchDraws': m_d,
-                'matchLosses': m_l,
-                'roundWins': r_w,
-                'roundLosses': r_l,
-                'ns': ns,
-                'ko_played': ko_p,
-                'ko_points': ko_pts,
-                'ko_matchWins': ko_mw,
-                'ko_matchLosses': ko_ml,
-                'ko_roundWins': ko_rw,
-                'ko_roundLosses': ko_rl,
-                'ko_ns': ko_ns
-            })
-        standings.sort(key=lambda x: x['algo'])
-        tournament.standings = standings
+            if 0 <= algo_id < len(tournament.standings):
+                s = tournament.standings[algo_id]
+                s['group'] = g_id
+                s['played'] = played
+                s['points'] = pts
+                s['matchWins'] = m_w
+                s['matchDraws'] = m_d
+                s['matchLosses'] = m_l
+                s['roundWins'] = r_w
+                s['roundLosses'] = r_l
+                s['ns'] = ns
+                s['ko_played'] = ko_p
+                s['ko_points'] = ko_pts
+                s['ko_matchWins'] = ko_mw
+                s['ko_matchLosses'] = ko_ml
+                s['ko_roundWins'] = ko_rw
+                s['ko_roundLosses'] = ko_rl
+                s['ko_ns'] = ko_ns
         
         cursor.execute("SELECT algo_id FROM bracket ORDER BY position")
         rows = cursor.fetchall()
@@ -613,15 +659,36 @@ def update_scenario_performance(algo_name, scenario_id, time_ns, ops, db_path=DB
 
 # Tournament Season Archival Helpers
 
-def archive_tournament_season(year, standings, bracket, fixtures, champion, db_path=DB_FILE):
+def archive_tournament_season(year, standings, bracket, fixtures, champion, cc_standings=None, cc_bracket=None, cc_fixtures=None, cc_champ=None, cc_lcp_bracket=None, wc_results=None, cc_results=None, db_path=DB_FILE):
     """Stores the complete standings, bracket tree, fixtures, and champion name of a season."""
     init_db(db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    
+    if cc_standings is not None:
+        standings_data = {"wc": standings, "cc": cc_standings}
+        bracket_data = {
+            "wc": bracket,
+            "cc_main": cc_bracket,
+            "cc_lcp": cc_lcp_bracket,
+            "wc_results": wc_results if wc_results is not None else {},
+            "cc_results": cc_results if cc_results is not None else {}
+        }
+        fixtures_data = {"wc": fixtures, "cc": cc_fixtures}
+        champion_data = json.dumps({"wc": champion, "cc": cc_champ})
+    else:
+        standings_data = standings
+        bracket_data = {
+            "wc": bracket,
+            "wc_results": wc_results if wc_results is not None else {}
+        }
+        fixtures_data = fixtures
+        champion_data = champion
+
     cursor.execute("""
         INSERT OR REPLACE INTO tournament_archives (year, standings_json, bracket_json, fixtures_json, champion)
         VALUES (?, ?, ?, ?, ?)
-    """, (year, json.dumps(standings), json.dumps(bracket), json.dumps(fixtures), champion))
+    """, (year, json.dumps(standings_data), json.dumps(bracket_data), json.dumps(fixtures_data), champion_data))
     conn.commit()
     conn.close()
 
@@ -633,7 +700,18 @@ def get_archived_seasons(db_path=DB_FILE):
     cursor.execute("SELECT year, champion FROM tournament_archives ORDER BY year DESC")
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    
+    decoded = []
+    for yr, champ in rows:
+        try:
+            val = json.loads(champ)
+            if isinstance(val, dict) and "wc" in val:
+                decoded.append((yr, val["wc"]))
+            else:
+                decoded.append((yr, str(champ)))
+        except Exception:
+            decoded.append((yr, str(champ)))
+    return decoded
 
 def get_archived_season_details(year, db_path=DB_FILE):
     """Retrieves detailed archived records for a specific tournament year."""
@@ -644,10 +722,30 @@ def get_archived_season_details(year, db_path=DB_FILE):
     row = cursor.fetchone()
     conn.close()
     if row:
-        return {
-            'standings': json.loads(row[0]),
-            'bracket': json.loads(row[1]),
-            'fixtures': json.loads(row[2]),
-            'champion': row[3]
-        }
+        try:
+            standings = json.loads(row[0])
+            bracket = json.loads(row[1])
+            fixtures = json.loads(row[2])
+            champ_raw = row[3]
+            try:
+                champ_dict = json.loads(champ_raw)
+                if isinstance(champ_dict, dict) and "wc" in champ_dict:
+                    wc_champ = champ_dict["wc"]
+                    cc_champ = champ_dict.get("cc", "")
+                else:
+                    wc_champ = str(champ_raw)
+                    cc_champ = ""
+            except Exception:
+                wc_champ = str(champ_raw)
+                cc_champ = ""
+                
+            return {
+                'standings': standings,
+                'bracket': bracket,
+                'fixtures': fixtures,
+                'champion': wc_champ,
+                'cc_champion': cc_champ
+            }
+        except Exception:
+            pass
     return None
